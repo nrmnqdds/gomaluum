@@ -1,17 +1,13 @@
 definitions:
-  dtos.LoginProps:
+  dtos.ResponseDTO:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  proto.LoginRequest:
     properties:
       password:
-        type: string
-      username:
-        type: string
-    required:
-    - password
-    - username
-    type: object
-  dtos.LoginResponseDTO:
-    properties:
-      token:
         type: string
       username:
         type: string
@@ -30,6 +26,25 @@ info:
   title: Gomaluum API Server
   version: "2.0"
 paths:
+  /api/profile:
+    get:
+      description: Get i-Ma'luum profile
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ResponseDTO'
+      tags:
+      - scraper
   /api/result:
     get:
       description: Get result from i-Ma'luum
@@ -46,8 +61,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dtos.ResponseDTO'
       tags:
       - scraper
   /api/schedule:
@@ -66,8 +80,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dtos.ResponseDTO'
       tags:
       - scraper
   /auth/login:
@@ -82,14 +95,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/dtos.LoginProps'
+          $ref: '#/definitions/proto.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dtos.LoginResponseDTO'
+            $ref: '#/definitions/dtos.ResponseDTO'
       tags:
       - auth
 swagger: "2.0"

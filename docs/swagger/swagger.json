@@ -16,6 +16,35 @@
         "version": "2.0"
     },
     "paths": {
+        "/api/profile": {
+            "get": {
+                "description": "Get i-Ma'luum profile",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scraper"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ResponseDTO"
+                        }
+                    }
+                }
+            }
+        },
         "/api/result": {
             "get": {
                 "description": "Get result from i-Ma'luum",
@@ -39,8 +68,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dtos.ResponseDTO"
                         }
                     }
                 }
@@ -69,8 +97,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dtos.ResponseDTO"
                         }
                     }
                 }
@@ -95,7 +122,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dtos.LoginProps"
+                            "$ref": "#/definitions/proto.LoginRequest"
                         }
                     }
                 ],
@@ -103,7 +130,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dtos.LoginResponseDTO"
+                            "$ref": "#/definitions/dtos.ResponseDTO"
                         }
                     }
                 }
@@ -111,25 +138,19 @@
         }
     },
     "definitions": {
-        "dtos.LoginProps": {
+        "dtos.ResponseDTO": {
             "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
             "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "username": {
+                "data": {},
+                "message": {
                     "type": "string"
                 }
             }
         },
-        "dtos.LoginResponseDTO": {
+        "proto.LoginRequest": {
             "type": "object",
             "properties": {
-                "token": {
+                "password": {
                     "type": "string"
                 },
                 "username": {
