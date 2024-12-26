@@ -2,7 +2,7 @@ package templates
 
 import "github.com/nrmnqdds/gomaluum/templates/components"
 
-templ Home() {
+templ HomeScreen() {
 	@Base() {
 		<main class="relative isolate min-h-screen overflow-hidden bg-background">
 			<section class="relative">
@@ -49,7 +49,7 @@ templ Home() {
 						</p>
 						<form
 							class="mt-10 w-fit space-y-2"
-							hx-post="/api/login"
+							hx-post="/api/login?redirect=true"
 							hx-target="#login-response"
 							hx-ext="json-enc"
 							hx-indicator="#login-loading"
@@ -72,7 +72,7 @@ templ Home() {
 								</span>
 							</button>
 						</form>
-						<div id="login-response" class="mt-2 text-red-500"></div>
+						<p id="login-response" class="mt-2 text-red-500"></p>
 					</div>
 					<div class="mx-auto mt-16 flex max-w-2xl sm:mt-24 lg:ml-10 lg:mr-0 lg:mt-0 lg:max-w-none lg:flex-none xl:ml-32">
 						<div class="max-w-3xl flex-none sm:max-w-5xl lg:max-w-none">
@@ -81,6 +81,7 @@ templ Home() {
 					</div>
 				</div>
 			</section>
+			@components.HomeFooter()
 		</main>
 	}
 }

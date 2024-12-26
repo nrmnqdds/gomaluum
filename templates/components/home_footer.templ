@@ -1,0 +1,79 @@
+package components
+
+type NavItem struct {
+	Name string
+	Href string
+}
+
+type SocialNavItem struct {
+	Name string
+	Href string
+	SVG  string
+}
+
+var Navigation = struct {
+	Support []NavItem
+	Legal   []NavItem
+}{
+	Support: []NavItem{
+		{Name: "Submit ticket", Href: "#"},
+		{Name: "API Documentation", Href: "/reference"},
+	},
+	Legal: []NavItem{
+		{Name: "Terms of service", Href: "#"},
+		{Name: "Privacy policy", Href: "#"},
+		{Name: "License", Href: "#"},
+	},
+}
+
+templ HomeFooter() {
+	<footer class="bg-background">
+		<div class="mx-auto max-w-7xl px-6 pb-8 pt-16 sm:pt-24 lg:px-8 lg:pt-32">
+			<div class="flex flex-col xl:flex-row justify-between">
+				<div class="space-y-8">
+					<img
+						alt="Gomaluum"
+						src="/static/img/logo-landing-page.png"
+						class="size-10"
+					/>
+					<p class="text-balance text-sm/6 text-gray-300">
+						Make i-Ma'luum great again.
+					</p>
+				</div>
+				<div class="mt-16 grid grid-cols-2 gap-8 xl:mt-0">
+					<div class="md:grid md:grid-cols-2 md:gap-8">
+						<div class="mt-10 md:mt-0">
+							<h3 class="text-sm/6 font-semibold text-white">Support</h3>
+							<ul role="list" class="mt-6 space-y-4">
+								for _, item := range Navigation.Support {
+									<li>
+										<a href={ templ.SafeURL(item.Href) } class="text-sm/6 text-gray-400 hover:text-white">
+											{ item.Name }
+										</a>
+									</li>
+								}
+							</ul>
+						</div>
+					</div>
+					<div class="md:grid md:grid-cols-2 md:gap-8">
+						<div class="mt-10 md:mt-0">
+							<h3 class="text-sm/6 font-semibold text-white">Legal</h3>
+							<ul role="list" class="mt-6 space-y-4">
+								for _, item := range Navigation.Legal {
+									<li>
+										<a href={ templ.SafeURL(item.Href) } class="text-sm/6 text-gray-400 hover:text-white">
+											{ item.Name }
+										</a>
+									</li>
+								}
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="mt-16 border-t border-white/10 pt-8 sm:mt-20 lg:mt-24">
+				<p class="text-sm/6 text-gray-400">&copy; 2024 nrmnqdds. All rights reserved.</p>
+			</div>
+		</div>
+	</footer>
+}

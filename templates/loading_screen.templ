@@ -1,0 +1,18 @@
+package templates
+
+templ LoadingScreen() {
+	@Base() {
+		<div className="w-full h-screen bg-card flex items-center justify-center">
+			<div className="flex flex-col items-center gap-y-4">
+				<img
+					src="/static/img/logo-landing-page.png"
+					alt="logo"
+					className="object-contain animate-spin size-[200]"
+				/>
+				<div className="text-2xl font-semibold text-primary">
+					Loading your data...
+				</div>
+			</div>
+		</div>
+	}
+}
