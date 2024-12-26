@@ -14,33 +14,35 @@ import (
 	"github.com/nrmnqdds/gomaluum/pkg/utils"
 )
 
-// @Title GetResultHandler
+// @Title ResultHandler
 // @Description Get result from i-Ma'luum
 // @Tags scraper
 // @Produce json
 // @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} dtos.ResponseDTO
 // @Router /api/result [get]
 func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	logger := s.log.GetLogger()
 
-	cookie := r.Context().Value(ctxToken).(string)
-
 	var (
+		cookie         = r.Context().Value(ctxToken).(string)
 		c              = colly.NewCollector()
 		wg             sync.WaitGroup
 		result         []dtos.ResultResponse
 		sessionQueries []string
 		sessionNames   []string
+		stringBuilder  strings.Builder
 	)
 
+	stringBuilder.Grow(100)
+	stringBuilder.WriteString("MOD_AUTH_CAS=")
+	stringBuilder.WriteString(cookie)
+
 	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
+		r.Headers.Set("Cookie", stringBuilder.String())
 		r.Headers.Set("User-Agent", cuid.New())
 	})
-
-	resultChan := make(chan dtos.ResultResponse)
 
 	c.OnHTML(".box.box-primary .box-header.with-border .dropdown ul.dropdown-menu", func(e *colly.HTMLElement) {
 		sessionQueries = e.ChildAttrs("li[style*='font-size:16px'] a", "href")
@@ -62,15 +64,15 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 			filteredNames = append(filteredNames, sessionNames[i])
 		}
 	}
-	sessionQueries = filteredQueries
-	sessionNames = filteredNames
 
-	for i := range sessionQueries {
+	resultChan := make(chan dtos.ResultResponse, len(filteredQueries))
+
+	for i := range filteredQueries {
 		wg.Add(1)
 
 		clone := c.Clone()
 
-		go getResultFromSession(clone, cookie, sessionQueries[i], sessionNames[i], resultChan, &wg)
+		go getResultFromSession(clone, cookie, filteredQueries[i], filteredNames[i], resultChan, &wg)
 	}
 
 	go func() {

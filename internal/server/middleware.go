@@ -58,6 +58,7 @@ func (s *Server) PasetoAuthenticator() func(http.Handler) http.Handler {
 type CustomContext struct {
 	context.Context
 	StartTime time.Time
+	Cookie    string
 }
 
 type (
@@ -65,7 +66,7 @@ type (
 	TemplMiddleware func(ctx *CustomContext, w http.ResponseWriter, r *http.Request) error
 )
 
-func Chain(w http.ResponseWriter, r *http.Request, template templ.Component, middleware ...TemplMiddleware) {
+func (s *Server) Chain(w http.ResponseWriter, r *http.Request, template templ.Component, middleware ...TemplMiddleware) {
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	customContext := &CustomContext{

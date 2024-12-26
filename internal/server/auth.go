@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	pb "github.com/nrmnqdds/gomaluum/internal/proto"
 )
 
@@ -12,11 +13,12 @@ import (
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param body body dtos.LoginProps true "Login properties"
-// @Success 200 {object} dtos.LoginResponseDTO
+// @Param body body pb.LoginRequest true "Login properties"
+// @Success 200 {object} dtos.ResponseDTO
 // @Router /auth/login [post]
 func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	redirect := r.URL.Query().Get("redirect")
 	logger := s.log.GetLogger()
 
 	user := &pb.LoginRequest{}
@@ -27,7 +29,6 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// casCookie, respUsername, respPassword, err := s.Login(r.Context(), user)
 	resp, err := s.Login(r.Context(), user)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to login: %v", err)
@@ -47,12 +48,22 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Username: resp.Username,
 	}
 
-	jsonResp, err := json.Marshal(result)
+	response := &dtos.ResponseDTO{
+		Message: "Login successful",
+		Data:    result,
+	}
+
+	jsonResp, err := json.Marshal(response)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to marshal JSON: %v", err)
 		_, _ = w.Write([]byte("Failed to marshal JSON"))
 		return
 	}
 
-	_, _ = w.Write(jsonResp)
+	if redirect == "" {
+		_, _ = w.Write(jsonResp)
+		return
+	}
+
+	w.Header().Add("Hx-Redirect", "/dashboard")
 }

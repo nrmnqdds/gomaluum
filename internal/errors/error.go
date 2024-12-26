@@ -18,6 +18,7 @@ func (e ErrorDetails) Error() string {
 }
 
 var (
-	ErrInvalidRequest = errors.New("invalid request body")
-	ErrInvalidToken   = errors.New("invalid token")
+	ErrInvalidRequest  = errors.New("invalid request body")
+	ErrInvalidToken    = errors.New("invalid token")
+	ErrFailedToGoToURL = errors.New("failed to go to URL")
 )

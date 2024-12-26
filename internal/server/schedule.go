@@ -16,39 +16,42 @@ import (
 	"github.com/rung/go-safecast"
 )
 
-// @Title GetScheduleHandler
+// @Title ScheduleHandler
 // @Description Get schedule from i-Ma'luum
 // @Tags scraper
 // @Produce json
 // @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} dtos.ResponseDTO
 // @Router /api/schedule [get]
 func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	logger := s.log.GetLogger()
-
-	cookie := r.Context().Value(ctxToken).(string)
-	logger.Sugar().Infof("Cookie: %v", cookie)
 
 	var (
+		logger         = s.log.GetLogger()
+		cookie         = r.Context().Value(ctxToken).(string)
 		c              = colly.NewCollector()
 		wg             sync.WaitGroup
 		schedule       []dtos.ScheduleResponse
 		sessionQueries []string
 		sessionNames   []string
+		stringBuilder  strings.Builder
 	)
 
+	stringBuilder.Grow(100)
+	stringBuilder.WriteString("MOD_AUTH_CAS=")
+	stringBuilder.WriteString(cookie)
+
 	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
+		r.Headers.Set("Cookie", stringBuilder.String())
 		r.Headers.Set("User-Agent", cuid.New())
 	})
-
-	scheduleChan := make(chan dtos.ScheduleResponse)
 
 	c.OnHTML(".box.box-primary .box-header.with-border .dropdown ul.dropdown-menu", func(e *colly.HTMLElement) {
 		sessionQueries = e.ChildAttrs("li[style*='font-size:16px'] a", "href")
 		sessionNames = e.ChildTexts("li[style*='font-size:16px'] a")
 	})
+
+	scheduleChan := make(chan dtos.ScheduleResponse, len(sessionQueries))
 
 	if err := c.Visit(constants.ImaluumSchedulePage); err != nil {
 		logger.Sugar().Error("Failed to go to URL")
