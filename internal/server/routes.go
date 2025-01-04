@@ -49,7 +49,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		r.Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
 			s.Chain(w, r, templates.LoadingScreen())
 			cookie := r.Context().Value(ctxToken).(string)
-			profile, err := s.Profile(cookie)
+			profile, err := s.Profile(r.Context(), cookie)
 			if err != nil {
 				_, _ = w.Write([]byte("Failed to get profile"))
 				return

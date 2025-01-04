@@ -22,7 +22,7 @@ func (s *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		cookie = r.Context().Value(ctxToken).(string)
 	)
 
-	profile, err := s.Profile(cookie)
+	profile, err := s.Profile(r.Context(), cookie)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to get profile: %v", err)
 		_, _ = w.Write([]byte("Failed to get profile"))

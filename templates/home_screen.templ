@@ -54,6 +54,15 @@ templ HomeScreen() {
 							hx-ext="json-enc"
 							hx-indicator="#login-loading"
 							hx-disabled-elt="find button"
+							hx-on::after-request="
+              try{
+                const response = JSON.parse(event.detail.xhr.response);
+                localStorage.setItem('token', response.data.token);
+                console.log(response);
+              }catch(err){
+                console.error(err);
+              }
+              "
 						>
 							<div class="flex items-center justify-center gap-3">
 								@components.Input("username", "text", "Matric Number")

@@ -49,7 +49,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := &dtos.ResponseDTO{
-		Message: "Login successful",
+		Message: "Login successful! Please use the token in the Authorization header for future requests.",
 		Data:    result,
 	}
 
@@ -66,4 +66,5 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Hx-Redirect", "/dashboard")
+	// _, _ = w.Write(jsonResp)
 }

@@ -2,7 +2,11 @@ package templates
 
 templ LoadingScreen() {
 	@Base() {
-		<div className="w-full h-screen bg-card flex items-center justify-center">
+		<div
+			hx-get="/api/profile"
+			hx-headers="{Authorization: Bearer {localStorage.getItem('token')}}"
+			className="w-full h-screen bg-card flex items-center justify-center"
+		>
 			<div className="flex flex-col items-center gap-y-4">
 				<img
 					src="/static/img/logo-landing-page.png"

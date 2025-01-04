@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"strings"
 
 	"github.com/go-faster/errors"
@@ -11,13 +12,18 @@ import (
 	e "github.com/nrmnqdds/gomaluum/internal/errors"
 )
 
-func (s *Server) Profile(cookie string) (*dtos.Profile, error) {
+func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, error) {
 	var (
 		logger        = s.log.GetLogger()
 		c             = colly.NewCollector()
 		profile       = dtos.Profile{}
 		stringBuilder strings.Builder
 	)
+
+	cookieFromContext := ctx.Value("cookie").(string)
+	if cookieFromContext != "" {
+		cookie = cookieFromContext
+	}
 
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
