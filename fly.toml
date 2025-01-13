@@ -8,29 +8,13 @@ primary_region = 'sin'
 
 [build]
 
-# [http_service]
-#   internal_port = 1323
-#   force_https = true
-#   auto_stop_machines = 'stop'
-#   auto_start_machines = true
-#   min_machines_running = 1
-#   processes = ['app']
-
-[[services]]
+[http_service]
   internal_port = 1323
-  protocol = "tcp"
-
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = 1323
-
-[[services]]
-  internal_port = 80
-  protocol = "tcp"
-
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = 443
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
 
 [[vm]]
   memory = '1gb'

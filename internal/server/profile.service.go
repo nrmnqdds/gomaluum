@@ -20,11 +20,6 @@ func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, err
 		stringBuilder strings.Builder
 	)
 
-	cookieFromContext := ctx.Value("cookie").(string)
-	if cookieFromContext != "" {
-		cookie = cookieFromContext
-	}
-
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
 		r.Headers.Set("User-Agent", cuid.New())

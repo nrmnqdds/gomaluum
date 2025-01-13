@@ -29,6 +29,10 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// RedirectSlashes middleware is a simple middleware that will match request paths with a trailing slash, strip it, and redirect.
 	r.Use(middleware.RedirectSlashes)
 
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/reference", http.StatusMovedPermanently)
+	})
+
 	r.Get("/reference", s.ScalarReference)
 
 	// All routes in this group require authentication
