@@ -21,7 +21,7 @@ primary_region = 'sin'
   protocol = "tcp"
 
   [[services.ports]]
-    handlers = ["http"]
+    handlers = ["tls", "http"]
     port = 1323
 
 [[services]]
