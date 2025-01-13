@@ -43,14 +43,14 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /frontend
 
 # Install dependencies
-COPY package.json pnpm-lock.yaml* ./
+COPY frontend/package.json frontend/pnpm-lock.yaml* ./
 RUN pnpm i --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /frontend
 COPY --from=deps /frontend/node_modules ./node_modules
-COPY . .
+COPY frontend/. .
 
 ENV NODE_ENV=production
 ENV TZ=Asia/Kuala_Lumpur
