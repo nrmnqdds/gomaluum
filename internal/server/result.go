@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/lucsky/cuid"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
+	"github.com/nrmnqdds/gomaluum/internal/errors"
 	"github.com/nrmnqdds/gomaluum/pkg/utils"
 )
 
@@ -51,7 +53,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := c.Visit(constants.ImaluumResultPage); err != nil {
 		logger.Error("Failed to go to URL")
-		_, _ = w.Write([]byte("Failed to go to URL"))
+		errors.Render(w, errors.ErrFailedToGoToURL)
 		return
 	}
 
@@ -72,7 +74,15 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 
 		clone := c.Clone()
 
-		go getResultFromSession(clone, cookie, filteredQueries[i], filteredNames[i], resultChan, &wg)
+		go func() {
+			defer wg.Done()
+			response, err := getResultFromSession(clone, cookie, filteredQueries[i], filteredNames[i])
+			if err != nil {
+				logger.Error("Failed to get result from session")
+				return
+			}
+			resultChan <- *response
+		}()
 	}
 
 	go func() {
@@ -86,7 +96,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 
 	if len(result) == 0 {
 		logger.Error("Result is empty")
-		_, _ = w.Write([]byte("Schedule is empty"))
+		errors.Render(w, errors.ErrResultIsEmpty)
 		return
 	}
 
@@ -101,13 +111,11 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
-		_, _ = w.Write([]byte("Failed to encode response"))
+		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}
 }
 
-func getResultFromSession(c *colly.Collector, cookie string, sessionQuery string, sessionName string, resultChan chan<- dtos.ResultResponse, wg *sync.WaitGroup) {
-	defer wg.Done()
-
+func getResultFromSession(c *colly.Collector, cookie string, sessionQuery string, sessionName string) (*dtos.ResultResponse, error) {
 	url := constants.ImaluumResultPage + sessionQuery
 
 	var (
@@ -177,7 +185,7 @@ func getResultFromSession(c *colly.Collector, cookie string, sessionQuery string
 
 		mu.Lock()
 		subjects = append(subjects, dtos.Result{
-			ID:           cuid.Slug(),
+			ID:           fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
 			CourseCode:   courseCode,
 			CourseName:   courseName,
 			CourseGrade:  courseGrade,
@@ -187,11 +195,11 @@ func getResultFromSession(c *colly.Collector, cookie string, sessionQuery string
 	})
 
 	if err := c.Visit(url); err != nil {
-		return
+		return nil, errors.ErrFailedToGoToURL
 	}
 
-	resultChan <- dtos.ResultResponse{
-		ID:           cuid.Slug(),
+	return &dtos.ResultResponse{
+		ID:           fmt.Sprintf("gomaluum:result:%s", cuid.Slug()),
 		SessionName:  sessionName,
 		SessionQuery: sessionQuery,
 		GpaValue:     gpa,
@@ -199,5 +207,5 @@ func getResultFromSession(c *colly.Collector, cookie string, sessionQuery string
 		CreditHours:  chr,
 		Status:       status,
 		Result:       subjects,
-	}
+	}, nil
 }

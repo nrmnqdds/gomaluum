@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"time"
 
 	"github.com/cristalhq/base64"
@@ -75,7 +74,7 @@ func (s *Server) DecodePasetoToken(token string) (string, error) {
 		// regenerate the token
 		logger.Sugar().Infof("Regenerating token with username: %s, password: %s", username, string(decodedPassword))
 
-		resp, err := s.Login(context.Background(), &pb.LoginRequest{
+		resp, err := s.Login(&pb.LoginRequest{
 			Username: username,
 			Password: string(decodedPassword),
 		})

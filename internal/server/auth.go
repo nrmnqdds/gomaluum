@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
+	"github.com/nrmnqdds/gomaluum/internal/errors"
 	pb "github.com/nrmnqdds/gomaluum/internal/proto"
 )
 
@@ -18,28 +19,26 @@ import (
 // @Router /auth/login [post]
 func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	redirect := r.URL.Query().Get("redirect")
 	logger := s.log.GetLogger()
 
 	user := &pb.LoginRequest{}
 
 	if err := json.NewDecoder(r.Body).Decode(user); err != nil {
 		logger.Sugar().Errorf("Failed to decode request body: %v", err)
-		_, _ = w.Write([]byte("Failed to decode request body"))
+		errors.Render(w, errors.ErrInvalidRequest)
 		return
 	}
 
-	resp, err := s.Login(r.Context(), user)
+	resp, err := s.Login(user)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to login: %v", err)
-		_, _ = w.Write([]byte("Failed to login"))
+		errors.Render(w, err)
 		return
 	}
 
 	newCookie, _, err := s.GeneratePasetoToken(resp.Token, resp.Username, resp.Password)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to generate PASETO token: %v", err)
-		_, _ = w.Write([]byte("Failed to generate PASETO token"))
+		errors.Render(w, errors.ErrFailedToDecodePASETO)
 		return
 	}
 
@@ -53,18 +52,8 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Data:    result,
 	}
 
-	jsonResp, err := json.Marshal(response)
-	if err != nil {
-		logger.Sugar().Errorf("Failed to marshal JSON: %v", err)
-		_, _ = w.Write([]byte("Failed to marshal JSON"))
-		return
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		logger.Sugar().Errorf("Failed to encode response: %v", err)
+		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}
-
-	if redirect == "" {
-		_, _ = w.Write(jsonResp)
-		return
-	}
-
-	w.Header().Add("Hx-Redirect", "/dashboard")
-	// _, _ = w.Write(jsonResp)
 }

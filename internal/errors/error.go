@@ -1,24 +1,65 @@
 package errors
 
 import (
-	"errors"
 	"fmt"
+	"net/http"
 )
 
-type ErrorDetails struct {
-	ApplicationError error  `json:"application_error"`
-	ErrorMessage     string `json:"error"`
-	ErrorDetail      string `json:"message"`
-	HTTPCode         int    `json:"http_code"`
+type CustomError struct {
+	OriginalErr error  `json:"-"`
+	Message     string `json:"message,omitempty"`
+	StatusCode  int    `json:"status,omitempty"`
 }
 
-func (e ErrorDetails) Error() string {
-	errStr := fmt.Sprintf("Error: %s, Detail: %s", e.ErrorMessage, e.ErrorDetail)
-	return errStr
+// Error returns the error message
+func (e *CustomError) Error() string {
+	if e.OriginalErr != nil {
+		return fmt.Sprintf("%s: %v", e.Message, e.OriginalErr)
+	}
+	return e.Message
+}
+
+// GetStatusCode returns the status code
+func (e *CustomError) GetStatusCode() int {
+	return e.StatusCode
+}
+
+// WrapError wraps an original error with a predefined CustomError
+func Wrap(predefError *CustomError, originalErr error) *CustomError {
+	return &CustomError{
+		OriginalErr: originalErr,
+		Message:     predefError.Message,
+		StatusCode:  predefError.StatusCode,
+	}
+}
+
+func Render(w http.ResponseWriter, err error) {
+	re, ok := err.(*CustomError)
+	if !ok {
+		_, _ = w.Write([]byte(err.Error()))
+	}
+
+	_, _ = w.Write([]byte(re.Message))
 }
 
 var (
-	ErrInvalidRequest  = errors.New("invalid request body")
-	ErrInvalidToken    = errors.New("invalid token")
-	ErrFailedToGoToURL = errors.New("failed to go to URL")
+	ErrInvalidRequest = &CustomError{
+		Message:    "Invalid request body",
+		StatusCode: 400,
+	}
+
+	ErrInvalidToken = &CustomError{
+		Message:    "Invalid token",
+		StatusCode: 401,
+	}
+
+	ErrFailedToGoToURL = &CustomError{
+		Message:    "Failed to go to URL",
+		StatusCode: 500,
+	}
+
+	ErrFailedToEncodeResponse = &CustomError{
+		Message:    "Failed to encode response",
+		StatusCode: 500,
+	}
 )

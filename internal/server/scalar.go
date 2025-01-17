@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/MarceloPetrucio/go-scalar-api-reference"
+	"github.com/nrmnqdds/gomaluum/internal/errors"
 )
 
 func (s *Server) ScalarReference(w http.ResponseWriter, _ *http.Request) {
@@ -23,6 +24,7 @@ func (s *Server) ScalarReference(w http.ResponseWriter, _ *http.Request) {
 	})
 	if err != nil {
 		logger.Sugar().Errorf("%v", err)
+		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}
 
 	_, _ = w.Write([]byte(htmlContent))

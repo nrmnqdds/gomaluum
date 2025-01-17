@@ -1,10 +1,13 @@
 package errors
 
-import (
-	"errors"
-)
-
 var (
-	ErrLoginFailed    = errors.New("username or password is incorrect")
-	ErrURLParseFailed = errors.New("failed to parse URL")
+	ErrLoginFailed = &CustomError{
+		Message:    "Username or password is incorrect",
+		StatusCode: 401,
+	}
+
+	ErrURLParseFailed = &CustomError{
+		Message:    "Failed to parse URL",
+		StatusCode: 500,
+	}
 )

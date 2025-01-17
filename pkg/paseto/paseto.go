@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"aidanwoods.dev/go-paseto"
+	"github.com/nrmnqdds/gomaluum/internal/errors"
 )
 
 type AppPaseto struct {
@@ -13,23 +14,24 @@ type AppPaseto struct {
 	Token      *paseto.Token
 }
 
-func New() *AppPaseto {
+func New() (*AppPaseto, error) {
 	publicKey, err := paseto.NewV4AsymmetricPublicKeyFromHex(os.Getenv("PASETO_PUBLIC_KEY"))
 	if err != nil {
 		log.Fatalf("Failed to create public key: %v", err)
-		return nil
+		return nil, errors.ErrFailedToCreatePASETOPublicKey
 	}
 
 	privateKey, err := paseto.NewV4AsymmetricSecretKeyFromHex(os.Getenv("PASETO_SECRET_KEY"))
 	if err != nil {
 		log.Fatalf("Failed to create secret key: %v", err)
-		return nil
+		return nil, errors.ErrFailedToCreatePASETOPrivateKey
 	}
 
 	token := paseto.NewToken()
+
 	return &AppPaseto{
 		PublicKey:  &publicKey,
 		PrivateKey: &privateKey,
 		Token:      &token,
-	}
+	}, nil
 }

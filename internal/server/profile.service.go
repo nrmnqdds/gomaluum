@@ -1,18 +1,16 @@
 package server
 
 import (
-	"context"
 	"strings"
 
-	"github.com/go-faster/errors"
 	"github.com/gocolly/colly/v2"
 	"github.com/lucsky/cuid"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
-	e "github.com/nrmnqdds/gomaluum/internal/errors"
+	"github.com/nrmnqdds/gomaluum/internal/errors"
 )
 
-func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, error) {
+func (s *Server) Profile(cookie string) (*dtos.Profile, error) {
 	var (
 		logger        = s.log.GetLogger()
 		c             = colly.NewCollector()
@@ -62,12 +60,9 @@ func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, err
 
 	if err := c.Visit(constants.ImaluumProfilePage); err != nil {
 		logger.Sugar().Error("Failed to go to URL")
-		return nil, errors.Wrap(e.ErrFailedToGoToURL, err.Error())
-		// _, _ = w.Write([]byte("Failed to go to URL"))
-		// return
+		return nil, errors.ErrFailedToGoToURL
 	}
 
-	// profile.ImageURL = fmt.Sprintf("https://smartcard.iium.edu.my/packages/card/printing/camera/uploads/original/%s.jpeg", profile.MatricNo)
 	stringBuilder.Grow(100)
 	stringBuilder.WriteString("https://smartcard.iium.edu.my/packages/card/printing/camera/uploads/original/")
 	stringBuilder.WriteString(profile.MatricNo)

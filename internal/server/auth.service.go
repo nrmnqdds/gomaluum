@@ -9,15 +9,14 @@ import (
 	"strings"
 
 	"github.com/cloudflare/cloudflare-go"
-	"github.com/go-faster/errors"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
-	e "github.com/nrmnqdds/gomaluum/internal/errors"
+	"github.com/nrmnqdds/gomaluum/internal/errors"
 	"github.com/nrmnqdds/gomaluum/internal/proto"
 )
 
 // Login is a GRPC function to authenticate the user
 // Returns CAS cookie, username, and password
-func (s *Server) Login(_ context.Context, props *proto.LoginRequest) (*proto.LoginResponse, error) {
+func (s *Server) Login(props *proto.LoginRequest) (*proto.LoginResponse, error) {
 	jar, _ := cookiejar.New(nil)
 
 	logger := s.log.GetLogger()
@@ -29,7 +28,7 @@ func (s *Server) Login(_ context.Context, props *proto.LoginRequest) (*proto.Log
 	urlObj, err := url.Parse(constants.ImaluumPage)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to parse url: %v", err)
-		return nil, err
+		return nil, errors.ErrURLParseFailed
 	}
 
 	formVal := url.Values{
@@ -48,7 +47,7 @@ func (s *Server) Login(_ context.Context, props *proto.LoginRequest) (*proto.Log
 	respFirst, err := client.Do(reqFirst)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to login first request: %v", err)
-		return nil, errors.Wrap(e.ErrURLParseFailed, err.Error())
+		return nil, errors.ErrURLParseFailed
 	}
 	respFirst.Body.Close()
 
@@ -63,7 +62,7 @@ func (s *Server) Login(_ context.Context, props *proto.LoginRequest) (*proto.Log
 	respSecond, err := client.Do(reqSecond)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to login second request: %v", err)
-		return nil, errors.Wrap(e.ErrURLParseFailed, err.Error())
+		return nil, errors.ErrURLParseFailed
 	}
 	respSecond.Body.Close()
 
@@ -88,7 +87,7 @@ func (s *Server) Login(_ context.Context, props *proto.LoginRequest) (*proto.Log
 		}
 	}
 
-	return nil, errors.Wrap(e.ErrLoginFailed, "No CAS cookie found")
+	return nil, errors.ErrLoginFailed
 }
 
 func (s *Server) SaveToKV(username, password string) {

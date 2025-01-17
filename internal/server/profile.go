@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
+	"github.com/nrmnqdds/gomaluum/internal/errors"
 )
 
 // @Title ProfileHandler
@@ -22,10 +23,10 @@ func (s *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		cookie = r.Context().Value(ctxToken).(string)
 	)
 
-	profile, err := s.Profile(r.Context(), cookie)
+	profile, err := s.Profile(cookie)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to get profile: %v", err)
-		_, _ = w.Write([]byte("Failed to get profile"))
+		errors.Render(w, err)
 		return
 	}
 
@@ -36,6 +37,6 @@ func (s *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
-		_, _ = w.Write([]byte("Failed to encode response"))
+		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}
 }

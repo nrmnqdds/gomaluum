@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -24,11 +25,17 @@ type Server struct {
 }
 
 func NewServer(port int) *http.Server {
+	paseto, err := paseto.New()
+	if err != nil {
+		log.Fatalf("Failed to create paseto: %v", err)
+		return nil
+	}
+
 	NewServer := &Server{
 		port:   port,
 		log:    logger.New(),
 		cf:     cloudflare.New(),
-		paseto: paseto.New(),
+		paseto: paseto,
 		pb:     &Proto{},
 	}
 

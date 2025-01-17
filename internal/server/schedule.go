@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	"github.com/lucsky/cuid"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
+	"github.com/nrmnqdds/gomaluum/internal/errors"
 	"github.com/nrmnqdds/gomaluum/pkg/utils"
 	"github.com/rung/go-safecast"
 )
@@ -55,7 +57,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := c.Visit(constants.ImaluumSchedulePage); err != nil {
 		logger.Sugar().Error("Failed to go to URL")
-		_, _ = w.Write([]byte("Failed to go to URL"))
+		errors.Render(w, errors.ErrFailedToGoToURL)
 		return
 	}
 
@@ -64,7 +66,15 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 
 		clone := c.Clone()
 
-		go getScheduleFromSession(clone, cookie, sessionQueries[i], sessionNames[i], scheduleChan, &wg)
+		go func() {
+			defer wg.Done()
+			response, err := getScheduleFromSession(clone, cookie, sessionQueries[i], sessionNames[i])
+			if err != nil {
+				logger.Sugar().Errorf("Failed to get schedule from session: %v", err)
+				return
+			}
+			scheduleChan <- *response
+		}()
 	}
 
 	go func() {
@@ -78,7 +88,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 
 	if len(schedule) == 0 {
 		logger.Error("Schedule is empty")
-		_, _ = w.Write([]byte("Schedule is empty"))
+		errors.Render(w, errors.ErrScheduleIsEmpty)
 		return
 	}
 
@@ -93,17 +103,20 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
-		_, _ = w.Write([]byte("Failed to encode response"))
+		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}
 }
 
-func getScheduleFromSession(c *colly.Collector, cookie string, sessionQuery string, sessionName string, scheduleChan chan<- dtos.ScheduleResponse, wg *sync.WaitGroup) {
-	defer wg.Done()
+func getScheduleFromSession(c *colly.Collector, cookie string, sessionQuery string, sessionName string) (*dtos.ScheduleResponse, error) {
+	var (
+		mu            sync.Mutex
+		subjects      = []dtos.ScheduleSubject{}
+		stringBuilder strings.Builder
+	)
 
-	url := constants.ImaluumSchedulePage + sessionQuery
-
-	var mu sync.Mutex
-	subjects := []dtos.ScheduleSubject{}
+	stringBuilder.Grow(20)
+	stringBuilder.WriteString(constants.ImaluumSchedulePage)
+	stringBuilder.WriteString(sessionQuery)
 
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
@@ -259,7 +272,7 @@ func getScheduleFromSession(c *colly.Collector, cookie string, sessionQuery stri
 
 			mu.Lock()
 			subjects = append(subjects, dtos.ScheduleSubject{
-				ID:         cuid.Slug(),
+				ID:         fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
 				CourseCode: courseCode,
 				CourseName: courseName,
 				Section:    section,
@@ -272,14 +285,16 @@ func getScheduleFromSession(c *colly.Collector, cookie string, sessionQuery stri
 		}
 	})
 
-	if err := c.Visit(url); err != nil {
-		return
+	if err := c.Visit(stringBuilder.String()); err != nil {
+		return nil, err
 	}
 
-	scheduleChan <- dtos.ScheduleResponse{
-		ID:           cuid.Slug(),
+	response := &dtos.ScheduleResponse{
+		ID:           fmt.Sprintf("gomaluum:schedule:%s", cuid.Slug()),
 		SessionName:  sessionName,
 		SessionQuery: sessionQuery,
 		Schedule:     subjects,
 	}
+
+	return response, nil
 }
