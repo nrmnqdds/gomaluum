@@ -37,14 +37,15 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	r.Get("/reference", s.ScalarReference)
 
-	// All routes in this group require authentication
-	r.Group(func(r chi.Router) {
-		// Check for PASETO token in Authorization header
-		r.Use(s.PasetoAuthenticator())
+	// All routes in this group start with /api
+	r.Route("/api", func(r chi.Router) {
+		r.Post("/login", s.LoginHandler)
 
-		// All routes in this group start with /api
-		r.Route("/api", func(r chi.Router) {
-			r.Post("/login", s.LoginHandler)
+		// All routes in this group require authentication
+		r.Group(func(r chi.Router) {
+			// Check for PASETO token in Authorization header
+			r.Use(s.PasetoAuthenticator())
+
 			r.Get("/profile", s.ProfileHandler)
 			r.Get("/schedule", s.ScheduleHandler)
 			r.Get("/result", s.ResultHandler)
