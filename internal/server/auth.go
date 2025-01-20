@@ -84,20 +84,18 @@ func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	jar, _ := cookiejar.New(nil)
 
+	cookie := r.Context().Value(ctxToken).(string)
+
 	urlObj, err := url.Parse(constants.ImaluumLogoutPage)
 	if err != nil {
 		errors.Render(w, errors.ErrURLParseFailed)
 		return
 	}
 
-	currentToken := r.Header.Get("Authorization")
-
-	currentCookie, err := s.DecodePasetoToken(currentToken)
-
 	jar.SetCookies(urlObj, []*http.Cookie{
 		{
 			Name:  "MOD_AUTH_CAS",
-			Value: currentCookie,
+			Value: cookie,
 		},
 	})
 
