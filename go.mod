@@ -6,11 +6,11 @@ require (
 	aidanwoods.dev/go-paseto v1.5.3
 	github.com/MarceloPetrucio/go-scalar-api-reference v0.0.0-20240521013641-ce5d2efe0e06
 	github.com/a-h/templ v0.2.793
+	github.com/alexliesenfeld/health v0.8.0
 	github.com/cloudflare/cloudflare-go v0.112.0
 	github.com/cristalhq/base64 v0.1.2
 	github.com/go-chi/chi/v5 v5.2.0
 	github.com/go-chi/cors v1.2.1
-	github.com/go-faster/errors v0.7.1
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lucsky/cuid v1.2.1

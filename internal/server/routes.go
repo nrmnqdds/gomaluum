@@ -33,6 +33,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 		http.Redirect(w, r, "/reference", http.StatusMovedPermanently)
 	})
 
+	r.Get("/health", s.HealthHandler())
+
 	r.Get("/reference", s.ScalarReference)
 
 	// All routes in this group require authentication
