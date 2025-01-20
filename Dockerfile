@@ -34,8 +34,8 @@ EXPOSE 50051
 EXPOSE 1323
 
 # Health check
-# HEALTHCHECK --interval=30s --timeout=3s \
-#   CMD curl -f http://localhost:1323/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:1323/health || exit 1
 
 # Entrypoint
 ENTRYPOINT ["/gomaluum", "-p"]
