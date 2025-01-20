@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -19,6 +20,9 @@ import (
 // @Router /auth/login [post]
 func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
+	ctx := context.Background()
+
 	logger := s.log.GetLogger()
 
 	user := &pb.LoginRequest{}
@@ -29,7 +33,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := s.Login(user)
+	resp, err := s.grpc.Login(ctx, user)
 	if err != nil {
 		errors.Render(w, err)
 		return

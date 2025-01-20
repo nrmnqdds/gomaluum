@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package proto;
+package auth_proto;
 
-option go_package = "github.com/nrmnqdds/gomaluum/proto";
+option go_package = "github.com/nrmnqdds/gomaluum/auth_proto";
 
 service Auth {
   rpc Login(LoginRequest) returns (LoginResponse) {};

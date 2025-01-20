@@ -6,25 +6,27 @@ import (
 	"net/http"
 	"time"
 
-	pb "github.com/nrmnqdds/gomaluum/internal/proto"
-	"github.com/nrmnqdds/gomaluum/pkg/cloudflare"
+	auth_proto "github.com/nrmnqdds/gomaluum/internal/proto"
 	"github.com/nrmnqdds/gomaluum/pkg/logger"
 	"github.com/nrmnqdds/gomaluum/pkg/paseto"
 )
 
-type Proto struct {
-	pb.UnimplementedAuthServer
+type GRPCServer struct {
+	auth_proto.UnimplementedAuthServer
+}
+
+func NewGRPCServer() *GRPCServer {
+	return &GRPCServer{}
 }
 
 type Server struct {
 	log    *logger.AppLogger
-	cf     *cloudflare.AppCloudflare
 	paseto *paseto.AppPaseto
-	pb     *Proto
+	grpc   *GRPCServer
 	port   int
 }
 
-func NewServer(port int) *http.Server {
+func NewServer(port int, grpc *GRPCServer) *http.Server {
 	paseto, err := paseto.New()
 	if err != nil {
 		log.Fatalf("Failed to create paseto: %v", err)
@@ -34,9 +36,8 @@ func NewServer(port int) *http.Server {
 	NewServer := &Server{
 		port:   port,
 		log:    logger.New(),
-		cf:     cloudflare.New(),
 		paseto: paseto,
-		pb:     &Proto{},
+		grpc:   grpc,
 	}
 
 	// Declare Server config

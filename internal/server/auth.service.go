@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -11,15 +12,12 @@ import (
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
-	"github.com/nrmnqdds/gomaluum/internal/proto"
+	auth_proto "github.com/nrmnqdds/gomaluum/internal/proto"
+	cf "github.com/nrmnqdds/gomaluum/pkg/cloudflare"
 )
 
-// Login is a GRPC function to authenticate the user
-// Returns CAS cookie, username, and password
-func (s *Server) Login(props *proto.LoginRequest) (*proto.LoginResponse, error) {
+func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*auth_proto.LoginResponse, error) {
 	jar, _ := cookiejar.New(nil)
-
-	logger := s.log.GetLogger()
 
 	client := &http.Client{
 		Jar: jar,
@@ -27,26 +25,23 @@ func (s *Server) Login(props *proto.LoginRequest) (*proto.LoginResponse, error) 
 
 	urlObj, err := url.Parse(constants.ImaluumPage)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to parse url: %v", err)
 		return nil, errors.ErrURLParseFailed
 	}
 
 	formVal := url.Values{
-		"username":    {props.Username},
-		"password":    {props.Password},
+		"username":    {req.Username},
+		"password":    {req.Password},
 		"execution":   {"e1s1"},
 		"_eventId":    {"submit"},
 		"geolocation": {""},
 	}
 
 	// First request
-	logger.Debug("Making first request")
 	reqFirst, _ := http.NewRequest("GET", constants.ImaluumCasPage, nil)
 	setHeaders(reqFirst)
 
 	respFirst, err := client.Do(reqFirst)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to login first request: %v", err)
 		return nil, errors.ErrURLParseFailed
 	}
 	respFirst.Body.Close()
@@ -54,14 +49,12 @@ func (s *Server) Login(props *proto.LoginRequest) (*proto.LoginResponse, error) 
 	client.Jar.SetCookies(urlObj, respFirst.Cookies())
 
 	// Second request
-	logger.Debug("Making second request")
 	reqSecond, _ := http.NewRequest("POST", constants.ImaluumLoginPage, strings.NewReader(formVal.Encode()))
 	reqSecond.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	setHeaders(reqSecond)
 
 	respSecond, err := client.Do(reqSecond)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to login second request: %v", err)
 		return nil, errors.ErrURLParseFailed
 	}
 	respSecond.Body.Close()
@@ -69,17 +62,21 @@ func (s *Server) Login(props *proto.LoginRequest) (*proto.LoginResponse, error) 
 	cookies := client.Jar.Cookies(urlObj)
 
 	for _, cookie := range cookies {
-		logger.Sugar().Debugf("Cookie: %v", cookie)
 		if cookie.Name == "MOD_AUTH_CAS" {
 
 			// Save the username and password to KV
 			// Use goroutine to avoid blocking the main thread
-			go s.SaveToKV(props.Username, props.Password)
+			// go SaveToKV(req.Username, req.Password)
+			go func() {
+				if err := SaveToKV(ctx, req.Username, req.Password); err != nil {
+					log.Printf("Failed to save to KV: %v", err)
+				}
+			}()
 
-			resp := &proto.LoginResponse{
+			resp := &auth_proto.LoginResponse{
 				Token:    cookie.Value,
-				Username: props.Username,
-				Password: props.Password,
+				Username: req.Username,
+				Password: req.Password,
 			}
 
 			return resp, nil
@@ -90,9 +87,7 @@ func (s *Server) Login(props *proto.LoginRequest) (*proto.LoginResponse, error) 
 	return nil, errors.ErrLoginFailed
 }
 
-func (s *Server) SaveToKV(username, password string) {
-	ctx := context.Background()
-
+func SaveToKV(ctx context.Context, username, password string) error {
 	kvEntryParams := cloudflare.WriteWorkersKVEntryParams{
 		NamespaceID: os.Getenv("KV_NAMESPACE_ID"),
 		Key:         username,
@@ -105,13 +100,14 @@ func (s *Server) SaveToKV(username, password string) {
 		Type:       "account",
 	}
 
-	cfClient := s.cf.GetClient()
+	cfClient := cf.New()
+	client := cfClient.GetClient()
 
-	_, cerr := cfClient.WriteWorkersKVEntry(ctx, kvResourceContainer, kvEntryParams)
-	if cerr != nil {
-		s.log.Sugar().Errorf("Failed to write to KV: %v", cerr)
+	if _, err := client.WriteWorkersKVEntry(ctx, kvResourceContainer, kvEntryParams); err != nil {
+		return err
 	}
-	s.log.Sugar().Debugf("Successfully wrote to KV")
+
+	return nil
 }
 
 // Function to set headers for a request.

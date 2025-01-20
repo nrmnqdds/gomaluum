@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"time"
 
 	"github.com/cristalhq/base64"
@@ -42,6 +43,8 @@ func (s *Server) DecodePasetoToken(token string) (string, error) {
 	parser := paseto.NewParserWithoutExpiryCheck() // Don't use NewParser() which will checks expiry by default
 	logger := s.log.GetLogger()
 
+	ctx := context.Background()
+
 	// Don't throw an error immediately if the token has expired
 	// parser.AddRule(paseto.NotExpired())         // this will fail if the token has expired
 	parser.AddRule(paseto.IssuedBy("gomaluum")) // this will fail if the token was not issued by "gomaluum"
@@ -74,7 +77,7 @@ func (s *Server) DecodePasetoToken(token string) (string, error) {
 		// regenerate the token
 		logger.Sugar().Infof("Regenerating token with username: %s, password: %s", username, string(decodedPassword))
 
-		resp, err := s.Login(&pb.LoginRequest{
+		resp, err := s.grpc.Login(ctx, &pb.LoginRequest{
 			Username: username,
 			Password: string(decodedPassword),
 		})
