@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.21-alpine AS build
+FROM golang:1.23.2-alpine AS build
 LABEL org.opencontainers.image.source="https://github.com/nrmnqdds/gomaluum" \
   org.opencontainers.image.description="Gomaluum API Server" \
   org.opencontainers.image.version="2.0" \
@@ -30,8 +30,8 @@ ENV HOSTNAME=0.0.0.0
 USER nonroot:nonroot
 
 # Expose ports
-EXPOSE 1323
 EXPOSE 50051
+EXPOSE 1323
 
 # Health check
 # HEALTHCHECK --interval=30s --timeout=3s \
