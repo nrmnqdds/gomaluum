@@ -1,15 +1,15 @@
 definitions:
-  dtos.ResponseDTO:
-    properties:
-      data: {}
-      message:
-        type: string
-    type: object
-  proto.LoginRequest:
+  auth_proto.LoginRequest:
     properties:
       password:
         type: string
       username:
+        type: string
+    type: object
+  dtos.ResponseDTO:
+    properties:
+      data: {}
+      message:
         type: string
     type: object
 info:
@@ -95,7 +95,29 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/proto.LoginRequest'
+          $ref: '#/definitions/auth_proto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ResponseDTO'
+      tags:
+      - auth
+  /auth/logout:
+    get:
+      consumes:
+      - application/json
+      description: Logs out the user. Clears the token from IIUM's CAS. PASETO token
+        is still valid.
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:

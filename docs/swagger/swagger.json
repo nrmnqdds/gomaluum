@@ -122,8 +122,40 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/proto.LoginRequest"
+                            "$ref": "#/definitions/auth_proto.LoginRequest"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ResponseDTO"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "get": {
+                "description": "Logs out the user. Clears the token from IIUM's CAS. PASETO token is still valid.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -138,22 +170,22 @@
         }
     },
     "definitions": {
-        "dtos.ResponseDTO": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "proto.LoginRequest": {
+        "auth_proto.LoginRequest": {
             "type": "object",
             "properties": {
                 "password": {
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ResponseDTO": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {
                     "type": "string"
                 }
             }

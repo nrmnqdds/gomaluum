@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/cookiejar"
+	"net/url"
 
+	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
 	pb "github.com/nrmnqdds/gomaluum/internal/proto"
@@ -27,18 +30,21 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	user := &pb.LoginRequest{}
 
+	// Bind the request body to the user struct
 	if err := json.NewDecoder(r.Body).Decode(user); err != nil {
 		logger.Sugar().Errorf("Failed to decode request body: %v", err)
 		errors.Render(w, errors.ErrInvalidRequest)
 		return
 	}
 
+	// Call the Login method from the GRPC server
 	resp, err := s.grpc.Login(ctx, user)
 	if err != nil {
 		errors.Render(w, err)
 		return
 	}
 
+	// Generate a new PASETO token
 	newCookie, _, err := s.GeneratePasetoToken(resp.Token, resp.Username, resp.Password)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to generate PASETO token: %v", err)
@@ -56,8 +62,74 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Data:    result,
 	}
 
+	// Encode the response and write it to the response writer
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
 		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}
+}
+
+// @Title LogoutHandler
+// @Description Logs out the user. Clears the token from IIUM's CAS. PASETO token is still valid.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Success 200 {object} dtos.ResponseDTO
+// @Router /auth/logout [get]
+func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	logger := s.log.GetLogger()
+
+	jar, _ := cookiejar.New(nil)
+
+	urlObj, err := url.Parse(constants.ImaluumLogoutPage)
+	if err != nil {
+		errors.Render(w, errors.ErrURLParseFailed)
+		return
+	}
+
+	currentToken := r.Header.Get("Authorization")
+
+	currentCookie, err := s.DecodePasetoToken(currentToken)
+
+	jar.SetCookies(urlObj, []*http.Cookie{
+		{
+			Name:  "MOD_AUTH_CAS",
+			Value: currentCookie,
+		},
+	})
+
+	client := &http.Client{
+		Jar: jar,
+	}
+
+	req, _ := http.NewRequest("GET", constants.ImaluumCasLogoutPage, nil)
+	setHeaders(req)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		errors.Render(w, errors.ErrURLParseFailed)
+		return
+	}
+	resp.Body.Close()
+
+	response := &dtos.ResponseDTO{
+		Message: "Logout successful! Token has been cleared.",
+		Data:    nil,
+	}
+
+	// Encode the response and write it to the response writer
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		logger.Sugar().Errorf("Failed to encode response: %v", err)
+		errors.Render(w, errors.ErrFailedToEncodeResponse)
+	}
+}
+
+// Function to set headers for a request.
+func setHeaders(req *http.Request) {
+	req.Header.Set("Connection", "Keep-Alive")
+	req.Header.Set("Accept-Language", "en-US")
+	req.Header.Set("User-Agent", "Mozilla/5.0")
 }

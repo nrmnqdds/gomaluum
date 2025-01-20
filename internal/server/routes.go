@@ -49,6 +49,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 			r.Get("/profile", s.ProfileHandler)
 			r.Get("/schedule", s.ScheduleHandler)
 			r.Get("/result", s.ResultHandler)
+
+			r.Get("/logout", s.LogoutHandler)
 		})
 	})
 

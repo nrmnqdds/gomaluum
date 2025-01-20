@@ -109,10 +109,3 @@ func SaveToKV(ctx context.Context, username, password string) error {
 
 	return nil
 }
-
-// Function to set headers for a request.
-func setHeaders(req *http.Request) {
-	req.Header.Set("Connection", "Keep-Alive")
-	req.Header.Set("Accept-Language", "en-US")
-	req.Header.Set("User-Agent", "Mozilla/5.0")
-}
