@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
@@ -17,10 +18,14 @@ import (
 )
 
 func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*auth_proto.LoginResponse, error) {
-	jar, _ := cookiejar.New(nil)
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return nil, errors.ErrCookieJarCreationFailed
+	}
 
 	client := &http.Client{
-		Jar: jar,
+		Jar:     jar,
+		Timeout: time.Second * 10, // Indicates i-Ma'luum server is slow
 	}
 
 	urlObj, err := url.Parse(constants.ImaluumPage)
@@ -37,24 +42,38 @@ func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*
 	}
 
 	// First request
-	reqFirst, _ := http.NewRequest("GET", constants.ImaluumCasPage, nil)
+	reqFirst, err := http.NewRequest("GET", constants.ImaluumCasPage, nil)
+	if err != nil {
+    reqFirst.Body.Close()
+		return nil, errors.ErrURLParseFailed
+	}
+
 	setHeaders(reqFirst)
 
 	respFirst, err := client.Do(reqFirst)
 	if err != nil {
+		reqFirst.Body.Close()
+		respFirst.Body.Close()
 		return nil, errors.ErrURLParseFailed
 	}
+	reqFirst.Body.Close()
 	respFirst.Body.Close()
 
 	client.Jar.SetCookies(urlObj, respFirst.Cookies())
 
 	// Second request
-	reqSecond, _ := http.NewRequest("POST", constants.ImaluumLoginPage, strings.NewReader(formVal.Encode()))
+	reqSecond, err := http.NewRequest("POST", constants.ImaluumLoginPage, strings.NewReader(formVal.Encode()))
+	if err != nil {
+    reqSecond.Body.Close()
+		return nil, errors.ErrURLParseFailed
+	}
 	reqSecond.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	setHeaders(reqSecond)
 
 	respSecond, err := client.Do(reqSecond)
 	if err != nil {
+    reqSecond.Body.Close()
+		respSecond.Body.Close()
 		return nil, errors.ErrURLParseFailed
 	}
 	respSecond.Body.Close()
