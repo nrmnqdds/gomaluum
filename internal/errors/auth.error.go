@@ -11,8 +11,8 @@ var (
 		StatusCode: 500,
 	}
 
-	ErrCookieJarCreationFailed = &CustomError{
-		Message:    "Failed to create cookie jar",
-		StatusCode: 500,
-	}
+  ErrCookieJarCreationFailed = &CustomError{
+    Message:    "Failed to create cookie jar",
+    StatusCode: 500,
+  }
 )

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -61,7 +62,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 	filteredQueries := make([]string, 0)
 	filteredNames := make([]string, 0)
 	for i := range sessionQueries {
-		if sessionQueries[i] != "?ses=1111/1111&sem=1" && sessionQueries[i] != "?ses=0000/0000&sem=0" {
+		if !slices.Contains(UnwantedSessionQueries[:], sessionQueries[i]) {
 			filteredQueries = append(filteredQueries, sessionQueries[i])
 			filteredNames = append(filteredNames, sessionNames[i])
 		}
@@ -79,11 +80,12 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 			defer wg.Done()
 			response, err := getResultFromSession(clone, cookie, filteredQueries[i], filteredNames[i])
 			if err != nil {
-				logger.Error("Failed to get result from session")
+				logger.Sugar().Errorf("Failed to get result from session: %v", err)
 
 				errChan <- err
 				return
 			}
+
 			resultChan <- *response
 		}()
 	}
@@ -95,9 +97,11 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	for err := range errChan {
-		logger.Error("Failed to get result from session")
-		errors.Render(w, err)
-		return
+		if err != nil {
+			logger.Error("Failed to get result from session")
+			errors.Render(w, err)
+			return
+		}
 	}
 
 	for s := range resultChan {
@@ -208,7 +212,7 @@ func getResultFromSession(c *colly.Collector, cookie string, sessionQuery string
 		return nil, errors.ErrFailedToGoToURL
 	}
 
-	return &dtos.ResultResponse{
+	response := &dtos.ResultResponse{
 		ID:           fmt.Sprintf("gomaluum:result:%s", cuid.Slug()),
 		SessionName:  sessionName,
 		SessionQuery: sessionQuery,
@@ -217,5 +221,7 @@ func getResultFromSession(c *colly.Collector, cookie string, sessionQuery string
 		CreditHours:  chr,
 		Status:       status,
 		Result:       subjects,
-	}, nil
+	}
+
+	return response, nil
 }
