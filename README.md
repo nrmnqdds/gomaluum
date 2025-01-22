@@ -9,17 +9,11 @@ i-Ma'luum scraper reimplementation with Go
 🚧 **In Construction** 🚧
 -------------------------
 
-> [!IMPORTANT]
-> This project is **not** associated with the official i-Ma'luum!
-
-> [!CAUTION]
-> **Not stable yet**
+> [!IMPORTANT] This project is **not** associated with the official i-Ma'luum!
 
 Support this project!
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/nrmnqdds)
-
-<!--A backend REST API for my infamous [Simplified i-Ma'luum](https://github.com/nrmnqdds/simplified-imaluum). Aims to improvise the performance of the scraper as Next.js server actions didn't do well in bulk parallel fetching.-->
 
 A Reimplementation of the infamous [Simplified i-Ma'luum](https://imaluum.quddus.my) API in Go.
 
@@ -28,19 +22,20 @@ Swagger API documentation is available at [here](https://api.quddus.my/reference
 What's difference from previous version
 ---------------------------------------
 
--	[x] **Go** implementation
--	[x] **Goroutine** for improved performance
+-	[x] **Goroutine** for better concurrency performance
+-	[x] **PASETO** for secure SSO token generation
+-	[x] **gRPC** support for fast interservice communication
 -	[x] **Docker** support
-
-> Requires go >= 1.23
 
 Local installation
 ------------------
 
+> Requires go >= 1.23
+
 ```
 git clone http://github.com/nrmnqdds/gomaluum
 cd gomaluum
-go mod download
+go mod tidy
 air
 ```
 
@@ -55,6 +50,5 @@ docker run -p 1323:1323 -d gomaluum
 Todo
 ----
 
--	[ ] Result scraper
-	-	Handles unpaid tuition fee edgecases
--	[ ] Make it fasterrrrr
+-	[ ] Scrape more data
+-	[ ] Make it faster
