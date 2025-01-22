@@ -10,7 +10,12 @@ import (
 	"github.com/cloudflare/cloudflare-go"
 )
 
-// This is a very simple example that shows the basic features of this library.
+// @Title HealthHandler
+// @Description Check the health of the application.
+// @Tags misc
+// @Produce json
+// @Success 200
+// @Router /health [get]
 func (s *Server) HealthHandler() http.HandlerFunc {
 	// Create a new Checker.
 	checker := health.NewChecker(

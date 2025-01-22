@@ -127,4 +127,14 @@ paths:
             $ref: '#/definitions/dtos.ResponseDTO'
       tags:
       - auth
+  /health:
+    get:
+      description: Check the health of the application.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      tags:
+      - misc
 swagger: "2.0"

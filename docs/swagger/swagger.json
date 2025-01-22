@@ -167,6 +167,22 @@
                     }
                 }
             }
+        },
+        "/health": {
+            "get": {
+                "description": "Check the health of the application.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "misc"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         }
     },
     "definitions": {
