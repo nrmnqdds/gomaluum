@@ -9,7 +9,8 @@ i-Ma'luum scraper reimplementation with Go
 🚧 **In Construction** 🚧
 -------------------------
 
-> [!IMPORTANT] This project is **not** associated with the official i-Ma'luum!
+> [!IMPORTANT] 
+> This project is **not** associated with the official i-Ma'luum!
 
 Support this project!
 
