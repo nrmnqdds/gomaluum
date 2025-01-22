@@ -43,7 +43,7 @@ func (s *Server) PasetoAuthenticator() func(http.Handler) http.Handler {
 				return
 			}
 
-			logger.Sugar().Debugf("Token is authenticated: %v", token)
+			logger.Sugar().Debugf("Token is authenticated: %v", fmt.Sprintf("MOD_AUTH_CAS=%s", token))
 
 			// Create a new context from the request context and add the token to it
 			ctx := context.WithValue(r.Context(), ctxToken, token)
