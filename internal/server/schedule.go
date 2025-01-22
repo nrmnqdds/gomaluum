@@ -54,6 +54,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	scheduleChan := make(chan dtos.ScheduleResponse, len(sessionQueries))
+	errChan := make(chan error, len(sessionQueries))
 
 	if err := c.Visit(constants.ImaluumSchedulePage); err != nil {
 		logger.Sugar().Error("Failed to go to URL")
@@ -71,6 +72,8 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 			response, err := getScheduleFromSession(clone, cookie, sessionQueries[i], sessionNames[i])
 			if err != nil {
 				logger.Sugar().Errorf("Failed to get schedule from session: %v", err)
+
+				errChan <- err
 				return
 			}
 			scheduleChan <- *response
@@ -79,8 +82,15 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		wg.Wait()
+		close(errChan)
 		close(scheduleChan)
 	}()
+
+	for err := range errChan {
+		logger.Sugar().Errorf("Failed to get schedule from session: %v", err)
+		errors.Render(w, err)
+		return
+	}
 
 	for s := range scheduleChan {
 		schedule = append(schedule, s)

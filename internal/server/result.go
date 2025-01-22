@@ -68,6 +68,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resultChan := make(chan dtos.ResultResponse, len(filteredQueries))
+	errChan := make(chan error, len(filteredQueries))
 
 	for i := range filteredQueries {
 		wg.Add(1)
@@ -79,6 +80,8 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 			response, err := getResultFromSession(clone, cookie, filteredQueries[i], filteredNames[i])
 			if err != nil {
 				logger.Error("Failed to get result from session")
+
+				errChan <- err
 				return
 			}
 			resultChan <- *response
@@ -87,8 +90,15 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		wg.Wait()
+		close(errChan)
 		close(resultChan)
 	}()
+
+	for err := range errChan {
+		logger.Error("Failed to get result from session")
+		errors.Render(w, err)
+		return
+	}
 
 	for s := range resultChan {
 		result = append(result, s)
