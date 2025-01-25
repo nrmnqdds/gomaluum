@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"slices"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	"github.com/lucsky/cuid"
+	"github.com/mailru/easyjson"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
@@ -25,7 +25,6 @@ import (
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /api/result [get]
 func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	logger := s.log.GetLogger()
 
 	var (
@@ -123,7 +122,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 		Data:    result,
 	}
 
-	if err := json.NewEncoder(w).Encode(response); err != nil {
+	if _, _, err := easyjson.MarshalToHTTPResponseWriter(response, w); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
 		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}

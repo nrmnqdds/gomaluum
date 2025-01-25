@@ -2,11 +2,11 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 
+	"github.com/mailru/easyjson"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
@@ -22,8 +22,6 @@ import (
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /auth/login [post]
 func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	ctx := context.Background()
 
 	logger := s.log.GetLogger()
@@ -31,7 +29,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	user := &pb.LoginRequest{}
 
 	// Bind the request body to the user struct
-	if err := json.NewDecoder(r.Body).Decode(user); err != nil {
+	if err := easyjson.UnmarshalFromReader(r.Body, user); err != nil {
 		logger.Sugar().Errorf("Failed to decode request body: %v", err)
 		errors.Render(w, errors.ErrInvalidRequest)
 		return
@@ -62,8 +60,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Data:    result,
 	}
 
-	// Encode the response and write it to the response writer
-	if err := json.NewEncoder(w).Encode(response); err != nil {
+	if _, _, err := easyjson.MarshalToHTTPResponseWriter(response, w); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
 		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}
@@ -118,8 +115,7 @@ func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		Data:    nil,
 	}
 
-	// Encode the response and write it to the response writer
-	if err := json.NewEncoder(w).Encode(response); err != nil {
+	if _, _, err := easyjson.MarshalToHTTPResponseWriter(response, w); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
 		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}

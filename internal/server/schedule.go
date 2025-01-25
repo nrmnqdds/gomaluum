@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"slices"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	"github.com/lucsky/cuid"
+	"github.com/mailru/easyjson"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
@@ -32,8 +32,6 @@ var UnwantedSessionQueries = [...]string{
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /api/schedule [get]
 func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	var (
 		logger         = s.log.GetLogger()
 		cookie         = r.Context().Value(ctxToken).(string)
@@ -131,7 +129,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		Data:    schedule,
 	}
 
-	if err := json.NewEncoder(w).Encode(response); err != nil {
+	if _, _, err := easyjson.MarshalToHTTPResponseWriter(response, w); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
 		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}

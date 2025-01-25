@@ -7,10 +7,11 @@
 package auth_proto
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -20,6 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+//easyjson:json
 type LoginRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
@@ -170,11 +172,13 @@ func file_internal_proto_auth_proto_rawDescGZIP() []byte {
 	return file_internal_proto_auth_proto_rawDescData
 }
 
-var file_internal_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_internal_proto_auth_proto_goTypes = []any{
-	(*LoginRequest)(nil),  // 0: auth_proto.LoginRequest
-	(*LoginResponse)(nil), // 1: auth_proto.LoginResponse
-}
+var (
+	file_internal_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+	file_internal_proto_auth_proto_goTypes  = []any{
+		(*LoginRequest)(nil),  // 0: auth_proto.LoginRequest
+		(*LoginResponse)(nil), // 1: auth_proto.LoginResponse
+	}
+)
 var file_internal_proto_auth_proto_depIdxs = []int32{
 	0, // 0: auth_proto.Auth.Login:input_type -> auth_proto.LoginRequest
 	1, // 1: auth_proto.Auth.Login:output_type -> auth_proto.LoginResponse
