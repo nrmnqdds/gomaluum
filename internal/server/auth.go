@@ -75,8 +75,6 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /auth/logout [get]
 func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	logger := s.log.GetLogger()
 
 	jar, _ := cookiejar.New(nil)

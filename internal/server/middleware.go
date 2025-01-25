@@ -4,9 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
-
-	"github.com/a-h/templ"
 )
 
 type originCookie int
@@ -53,42 +50,4 @@ func (s *Server) PasetoAuthenticator() func(http.Handler) http.Handler {
 		}
 		return http.HandlerFunc(hfn)
 	}
-}
-
-type CustomContext struct {
-	context.Context
-	StartTime time.Time
-	Cookie    string
-}
-
-type (
-	TemplHandler    func(ctx *CustomContext, w http.ResponseWriter, r *http.Request)
-	TemplMiddleware func(ctx *CustomContext, w http.ResponseWriter, r *http.Request) error
-)
-
-func (s *Server) Chain(w http.ResponseWriter, r *http.Request, template templ.Component, middleware ...TemplMiddleware) {
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusOK)
-	customContext := &CustomContext{
-		Context:   context.Background(),
-		StartTime: time.Now(),
-	}
-	for _, mw := range middleware {
-		if err := mw(customContext, w, r); err != nil {
-			return
-		}
-	}
-	if err := template.Render(customContext, w); err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-	if err := Log(customContext, w, r); err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-}
-
-func Log(ctx *CustomContext, _ http.ResponseWriter, r *http.Request) error {
-	elapsedTime := time.Since(ctx.StartTime)
-	formattedTime := time.Now().Format("2006-01-02 15:04:05")
-	fmt.Printf("[%s] [%s] [%s] [%s]\n", formattedTime, r.Method, r.URL.Path, elapsedTime)
-	return nil
 }
