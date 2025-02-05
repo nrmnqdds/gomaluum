@@ -11,6 +11,14 @@ import (
 	"github.com/nrmnqdds/gomaluum/pkg/paseto"
 )
 
+type Handlers interface {
+	LoginHandler(w http.ResponseWriter, r *http.Request)
+	LogoutHandler(w http.ResponseWriter, r *http.Request)
+	ProfileHandler(w http.ResponseWriter, r *http.Request)
+	ScheduleHandler(w http.ResponseWriter, r *http.Request)
+	ResultHandler(w http.ResponseWriter, r *http.Request)
+}
+
 type GRPCServer struct {
 	auth_proto.UnimplementedAuthServer
 }

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bytedance/sonic"
 	"github.com/gocolly/colly/v2"
 	"github.com/lucsky/cuid"
-	"github.com/mailru/easyjson"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
@@ -25,11 +25,12 @@ import (
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /api/result [get]
 func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
-	logger := s.log.GetLogger()
+	w.Header().Set("Content-Type", "application/json")
 
 	var (
 		cookie         = r.Context().Value(ctxToken).(string)
 		c              = colly.NewCollector()
+		logger         = s.log.GetLogger()
 		wg             sync.WaitGroup
 		result         []dtos.ResultResponse
 		sessionQueries []string
@@ -122,7 +123,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 		Data:    result,
 	}
 
-	if _, _, err := easyjson.MarshalToHTTPResponseWriter(response, w); err != nil {
+	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
 		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}

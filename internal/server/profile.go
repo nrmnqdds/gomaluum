@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"github.com/mailru/easyjson"
+	"github.com/bytedance/sonic"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
 )
@@ -16,6 +16,8 @@ import (
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /api/profile [get]
 func (s *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	var (
 		logger = s.log.GetLogger()
 		cookie = r.Context().Value(ctxToken).(string)
@@ -33,7 +35,7 @@ func (s *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		Data:    profile,
 	}
 
-	if _, _, err := easyjson.MarshalToHTTPResponseWriter(response, w); err != nil {
+	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
 		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}

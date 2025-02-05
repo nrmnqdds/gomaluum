@@ -6,6 +6,7 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 
+	"github.com/bytedance/sonic"
 	"github.com/mailru/easyjson"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
@@ -22,6 +23,8 @@ import (
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /auth/login [post]
 func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	ctx := context.Background()
 
 	logger := s.log.GetLogger()
@@ -60,7 +63,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Data:    result,
 	}
 
-	if _, _, err := easyjson.MarshalToHTTPResponseWriter(response, w); err != nil {
+	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
 		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}
@@ -75,6 +78,8 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /auth/logout [get]
 func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	logger := s.log.GetLogger()
 
 	jar, _ := cookiejar.New(nil)
@@ -113,7 +118,7 @@ func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		Data:    nil,
 	}
 
-	if _, _, err := easyjson.MarshalToHTTPResponseWriter(response, w); err != nil {
+	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
 		errors.Render(w, errors.ErrFailedToEncodeResponse)
 	}
