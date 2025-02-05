@@ -63,7 +63,7 @@ func (s *GRPCServer) Login(ctx context.Context, props *auth_proto.LoginRequest) 
 
 	if err := fasthttp.Do(req2, resp2); err != nil {
 		log.Printf("error: %v", err)
-		return nil, errors.ErrURLParseFailed
+		return nil, errors.ErrLoginFailed
 	}
 
 	// Capture cookie from response 2
@@ -88,7 +88,7 @@ func (s *GRPCServer) Login(ctx context.Context, props *auth_proto.LoginRequest) 
 
 	if err := fasthttp.Do(req3, resp3); err != nil {
 		log.Printf("error: %v", err)
-		return nil, errors.ErrURLParseFailed
+		return nil, errors.ErrLoginFailed
 	}
 
 	// Capture cookie from response 3

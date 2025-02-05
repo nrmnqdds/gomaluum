@@ -81,7 +81,7 @@ func main() {
 	if dev {
 		err := godotenv.Load()
 		if err != nil {
-			log.Fatal("Error reading .env file!")
+			log.Fatal("Error reading .env file!", err)
 		}
 		log.Println(".env file loaded")
 		log.Println("Running in development mode")
