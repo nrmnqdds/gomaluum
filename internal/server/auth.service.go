@@ -14,6 +14,7 @@ import (
 	"github.com/nrmnqdds/gomaluum/internal/errors"
 	auth_proto "github.com/nrmnqdds/gomaluum/internal/proto"
 	cf "github.com/nrmnqdds/gomaluum/pkg/cloudflare"
+	"github.com/nrmnqdds/gomaluum/pkg/utils"
 )
 
 func (s *GRPCServer) Login(ctx context.Context, props *auth_proto.LoginRequest) (*auth_proto.LoginResponse, error) {
@@ -104,6 +105,7 @@ func (s *GRPCServer) Login(ctx context.Context, props *auth_proto.LoginRequest) 
 		if string(c.Key()) == "MOD_AUTH_CAS" {
 			cookie := string(c.Value())
 			go func() {
+				defer utils.CatchPanic("save to kv")
 				if err := SaveToKV(ctx, props.Username, props.Password); err != nil {
 					log.Printf("Failed to save to KV: %v", err)
 				}

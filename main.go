@@ -17,6 +17,7 @@ import (
 	"github.com/joho/godotenv"
 	auth_proto "github.com/nrmnqdds/gomaluum/internal/proto"
 	"github.com/nrmnqdds/gomaluum/internal/server"
+	"github.com/nrmnqdds/gomaluum/pkg/utils"
 	"google.golang.org/grpc"
 )
 
@@ -107,6 +108,7 @@ func main() {
 
 	// Start gRPC server in a goroutine
 	go func() {
+		defer utils.CatchPanic("gRPC server")
 		lis, err := net.Listen("tcp", ":50051")
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)

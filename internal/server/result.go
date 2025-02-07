@@ -77,6 +77,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 		clone := c.Clone()
 
 		go func() {
+			defer utils.CatchPanic("get result from session")
 			defer wg.Done()
 			response, err := getResultFromSession(clone, cookie, filteredQueries[i], filteredNames[i])
 			if err != nil {
@@ -91,6 +92,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
+		defer utils.CatchPanic("result close channel")
 		wg.Wait()
 		close(errChan)
 		close(resultChan)

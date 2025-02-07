@@ -84,6 +84,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		clone := c.Clone()
 
 		go func() {
+			defer utils.CatchPanic("get schedule from session")
 			defer wg.Done()
 
 			response, err := getScheduleFromSession(clone, cookie, filteredQueries[i], filteredNames[i])
@@ -99,6 +100,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
+		defer utils.CatchPanic("schedule close channel")
 		wg.Wait()
 		close(errChan)
 		close(scheduleChan)
