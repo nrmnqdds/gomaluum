@@ -6,7 +6,7 @@ import (
 	"github.com/nrmnqdds/gomaluum/pkg/logger"
 )
 
-func CatchPanic(funcName string, fields ...map[string]any) {
+func CatchPanic(funcName string, _ ...map[string]any) {
 	if err := recover(); err != nil {
 		stack := make([]byte, 8096)
 		stack = stack[:runtime.Stack(stack, false)]

@@ -23,7 +23,8 @@ tmp/
 .idea
 
 # .env file
-.env*
+.env
+.env.docker
 
 # Project build
 main

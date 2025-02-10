@@ -95,6 +95,12 @@ func (s *GRPCServer) Login(ctx context.Context, props *auth_proto.LoginRequest) 
 	// Capture cookie from response 3
 	cj.ReadResponse(resp3)
 
+	cipheredPassword := utils.Encrypt(props.Password)
+
+	if cipheredPassword == "" {
+		return nil, errors.ErrEncryptionFailed
+	}
+
 	for {
 		// Read cookie by cookie
 		c := cj.Get()
@@ -106,7 +112,7 @@ func (s *GRPCServer) Login(ctx context.Context, props *auth_proto.LoginRequest) 
 			cookie := string(c.Value())
 			go func() {
 				defer utils.CatchPanic("save to kv")
-				if err := SaveToKV(ctx, props.Username, props.Password); err != nil {
+				if err := SaveToKV(ctx, props.Username, cipheredPassword); err != nil {
 					log.Printf("Failed to save to KV: %v", err)
 				}
 			}()
@@ -123,6 +129,8 @@ func (s *GRPCServer) Login(ctx context.Context, props *auth_proto.LoginRequest) 
 	return nil, errors.ErrLoginFailed
 }
 
+// SaveToKV saves the username and password to Cloudflare Workers KV.
+// This is mainly used for debugging purposes.
 func SaveToKV(ctx context.Context, username, password string) error {
 	kvEntryParams := cloudflare.WriteWorkersKVEntryParams{
 		NamespaceID: os.Getenv("KV_NAMESPACE_ID"),

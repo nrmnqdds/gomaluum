@@ -11,8 +11,13 @@ var (
 		StatusCode: 500,
 	}
 
-  ErrCookieJarCreationFailed = &CustomError{
-    Message:    "Failed to create cookie jar",
-    StatusCode: 500,
-  }
+	ErrCookieJarCreationFailed = &CustomError{
+		Message:    "Failed to create cookie jar",
+		StatusCode: 500,
+	}
+
+	ErrEncryptionFailed = &CustomError{
+		Message:    "Failed to encrypt password",
+		StatusCode: 500,
+	}
 )
