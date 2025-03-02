@@ -16,6 +16,25 @@
         "version": "2.0"
     },
     "paths": {
+        "/api/ads": {
+            "get": {
+                "description": "Get i-Ma'luum ads",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scraper"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ResponseDTO"
+                        }
+                    }
+                }
+            }
+        },
         "/api/profile": {
             "get": {
                 "description": "Get i-Ma'luum profile",

@@ -40,6 +40,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// All routes in this group start with /api
 	r.Route("/api", func(r chi.Router) {
 		r.Post("/login", s.LoginHandler)
+		r.Get("/ads", s.AdsHandler)
 
 		// All routes in this group require authentication
 		r.Group(func(r chi.Router) {
