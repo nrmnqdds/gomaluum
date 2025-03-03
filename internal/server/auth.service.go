@@ -3,134 +3,115 @@ package server
 import (
 	"context"
 	"log"
+	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"os"
-
-	"github.com/dgrr/cookiejar"
-	"github.com/valyala/fasthttp"
+	"strings"
+	"time"
 
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
 	auth_proto "github.com/nrmnqdds/gomaluum/internal/proto"
 	cf "github.com/nrmnqdds/gomaluum/pkg/cloudflare"
-	"github.com/nrmnqdds/gomaluum/pkg/utils"
 )
 
-func (s *GRPCServer) Login(ctx context.Context, props *auth_proto.LoginRequest) (*auth_proto.LoginResponse, error) {
-	// Acquire cookie jar
-	cj := cookiejar.AcquireCookieJar()
-	defer cookiejar.ReleaseCookieJar(cj)
+func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*auth_proto.LoginResponse, error) {
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return nil, errors.ErrCookieJarCreationFailed
+	}
 
-	req1, resp1 := fasthttp.AcquireRequest(), fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req1)
-	defer fasthttp.ReleaseResponse(resp1)
+	client := &http.Client{
+		Jar:     jar,
+		Timeout: time.Second * 10, // Indicates i-Ma'luum server is slow
+	}
 
-	req1.SetRequestURI(constants.ImaluumCasPage)
-
-	if err := fasthttp.Do(req1, resp1); err != nil {
-		log.Printf("error: %v", err)
+	urlObj, err := url.Parse(constants.ImaluumPage)
+	if err != nil {
 		return nil, errors.ErrURLParseFailed
 	}
 
-	// Capture cookie from response 1
-	cj.ReadResponse(resp1)
-
-	req2, resp2 := fasthttp.AcquireRequest(), fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req2)
-	defer fasthttp.ReleaseResponse(resp2)
-
 	formVal := url.Values{
-		"username":    {props.Username},
-		"password":    {props.Password},
+		"username":    {req.Username},
+		"password":    {req.Password},
 		"execution":   {"e1s1"},
 		"_eventId":    {"submit"},
 		"geolocation": {""},
-	}.Encode()
-
-	req2.SetRequestURI(constants.ImaluumLoginPage)
-	req2.Header.SetMethod("POST")
-	req2.Header.SetContentType("application/x-www-form-urlencoded")
-	req2.SetBodyString(formVal)
-	for {
-		// Read cookie by cookie
-		c := cj.Get()
-		if c == nil {
-			break
-		}
-		req2.Header.SetCookieBytesKV(c.Key(), c.Value())
-		fasthttp.ReleaseCookie(c)
 	}
 
-	if err := fasthttp.Do(req2, resp2); err != nil {
-		log.Printf("error: %v", err)
-		return nil, errors.ErrLoginFailed
+	// First request
+	reqFirst, err := http.NewRequest("GET", constants.ImaluumCasPage, nil)
+	if err != nil {
+		reqFirst.Body.Close()
+		return nil, errors.ErrURLParseFailed
 	}
 
-	// Capture cookie from response 2
-	cj.ReadResponse(resp2)
+	setHeaders(reqFirst)
 
-	location := resp2.Header.Peek("Location")
-
-	req3, resp3 := fasthttp.AcquireRequest(), fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req3)
-	defer fasthttp.ReleaseResponse(resp3)
-
-	req3.SetRequestURI(string(location))
-	for {
-		// Read cookie by cookie
-		c := cj.Get()
-		if c == nil {
-			break
-		}
-		req3.Header.SetCookieBytesKV(c.Key(), c.Value())
-		fasthttp.ReleaseCookie(c)
+	respFirst, err := client.Do(reqFirst)
+	if err != nil {
+		reqFirst.Body.Close()
+		respFirst.Body.Close()
+		return nil, errors.ErrURLParseFailed
 	}
+	// if err := reqFirst.Body.Close(); err != nil {
+	// 	log.Printf("Failed to close request body: %v", err)
+	// 	return nil, errors.ErrURLParseFailed
+	// }
+	// if err := respFirst.Body.Close(); err != nil {
+	// 	log.Printf("Failed to close response body: %v", err)
+	// 	return nil, errors.ErrURLParseFailed
+	// }
 
-	if err := fasthttp.Do(req3, resp3); err != nil {
-		log.Printf("error: %v", err)
-		return nil, errors.ErrLoginFailed
+	client.Jar.SetCookies(urlObj, respFirst.Cookies())
+
+	// Second request
+	reqSecond, err := http.NewRequest("POST", constants.ImaluumLoginPage, strings.NewReader(formVal.Encode()))
+	if err != nil {
+		reqSecond.Body.Close()
+		return nil, errors.ErrURLParseFailed
 	}
+	reqSecond.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	setHeaders(reqSecond)
 
-	// Capture cookie from response 3
-	cj.ReadResponse(resp3)
-
-	cipheredPassword := utils.Encrypt(props.Password)
-
-	if cipheredPassword == "" {
-		return nil, errors.ErrEncryptionFailed
+	respSecond, err := client.Do(reqSecond)
+	if err != nil {
+		reqSecond.Body.Close()
+		respSecond.Body.Close()
+		return nil, errors.ErrURLParseFailed
 	}
+	respSecond.Body.Close()
 
-	for {
-		// Read cookie by cookie
-		c := cj.Get()
-		if c == nil {
-			break
-		}
+	cookies := client.Jar.Cookies(urlObj)
 
-		if string(c.Key()) == "MOD_AUTH_CAS" {
-			cookie := string(c.Value())
+	for _, cookie := range cookies {
+		if cookie.Name == "MOD_AUTH_CAS" {
+
+			// Save the username and password to KV
+			// Use goroutine to avoid blocking the main thread
+			// go SaveToKV(req.Username, req.Password)
 			go func() {
-				defer utils.CatchPanic("save to kv")
-				if err := SaveToKV(ctx, props.Username, cipheredPassword); err != nil {
+				if err := SaveToKV(ctx, req.Username, req.Password); err != nil {
 					log.Printf("Failed to save to KV: %v", err)
 				}
 			}()
 
-			return &auth_proto.LoginResponse{
-				Token:    cookie,
-				Username: props.Username,
-				Password: props.Password,
-			}, nil
+			resp := &auth_proto.LoginResponse{
+				Token:    cookie.Value,
+				Username: req.Username,
+				Password: req.Password,
+			}
+
+			return resp, nil
+
 		}
-		fasthttp.ReleaseCookie(c)
 	}
 
 	return nil, errors.ErrLoginFailed
 }
 
-// SaveToKV saves the username and password to Cloudflare Workers KV.
-// This is mainly used for debugging purposes.
 func SaveToKV(ctx context.Context, username, password string) error {
 	kvEntryParams := cloudflare.WriteWorkersKVEntryParams{
 		NamespaceID: os.Getenv("KV_NAMESPACE_ID"),

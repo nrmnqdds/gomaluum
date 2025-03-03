@@ -9,7 +9,6 @@ require (
 	github.com/bytedance/sonic v1.12.8
 	github.com/cloudflare/cloudflare-go v0.112.0
 	github.com/cristalhq/base64 v0.1.2
-	github.com/dgrr/cookiejar v0.0.0-20181027163754-344320c9f75e
 	github.com/go-chi/chi/v5 v5.2.0
 	github.com/go-chi/cors v1.2.1
 	github.com/gocolly/colly/v2 v2.1.0
@@ -19,7 +18,6 @@ require (
 	github.com/rung/go-safecast v1.0.1
 	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/swag v1.16.4
-	github.com/valyala/fasthttp v1.58.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.69.2
 	google.golang.org/protobuf v1.36.0
@@ -31,7 +29,6 @@ require (
 	github.com/PuerkitoBio/goquery v1.10.0 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/antchfx/htmlquery v1.3.4 // indirect
 	github.com/antchfx/xmlquery v1.4.3 // indirect
@@ -50,14 +47,12 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
-	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
-	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
