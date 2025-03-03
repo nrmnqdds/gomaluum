@@ -52,8 +52,8 @@ func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*
 
 	respFirst, err := client.Do(reqFirst)
 	if err != nil {
-		reqFirst.Body.Close()
-		respFirst.Body.Close()
+		// reqFirst.Body.Close()
+		// respFirst.Body.Close()
 		return nil, errors.ErrURLParseFailed
 	}
 	// if err := reqFirst.Body.Close(); err != nil {
@@ -76,13 +76,16 @@ func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*
 	reqSecond.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	setHeaders(reqSecond)
 
-	respSecond, err := client.Do(reqSecond)
-	if err != nil {
-		reqSecond.Body.Close()
-		respSecond.Body.Close()
+	if _, err := client.Do(reqSecond); err != nil {
+		// reqSecond.Body.Close()
 		return nil, errors.ErrURLParseFailed
 	}
-	respSecond.Body.Close()
+	// if err != nil {
+	// 	reqSecond.Body.Close()
+	// 	respSecond.Body.Close()
+	// 	return nil, errors.ErrURLParseFailed
+	// }
+	// respSecond.Body.Close()
 
 	cookies := client.Jar.Cookies(urlObj)
 
