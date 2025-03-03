@@ -39,7 +39,16 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// All routes in this group start with /api
 	r.Route("/api", func(r chi.Router) {
-		r.Post("/login", s.LoginHandler)
+		// Auth routes
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/login", s.LoginHandler)
+			r.Group(func(r chi.Router) {
+				// Check for PASETO token in Authorization header
+				r.Use(s.PasetoAuthenticator())
+				r.Get("/logout", s.LogoutHandler)
+			})
+		})
+
 		r.Get("/ads", s.AdsHandler)
 
 		// All routes in this group require authentication
@@ -50,8 +59,6 @@ func (s *Server) RegisterRoutes() http.Handler {
 			r.Get("/profile", s.ProfileHandler)
 			r.Get("/schedule", s.ScheduleHandler)
 			r.Get("/result", s.ResultHandler)
-
-			r.Get("/logout", s.LogoutHandler)
 		})
 	})
 
