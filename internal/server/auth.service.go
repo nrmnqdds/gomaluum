@@ -25,6 +25,7 @@ func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*
 	}
 
 	client := &http.Client{
+    Transport: s.httpClient.Transport,
 		Jar:     jar,
 		Timeout: time.Second * 10, // Indicates i-Ma'luum server is slow
 	}
