@@ -20,6 +20,7 @@ import (
 func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*auth_proto.LoginResponse, error) {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
+    log.Printf("Failed to create cookie jar: %v", err)
 		return nil, errors.ErrCookieJarCreationFailed
 	}
 
@@ -30,6 +31,7 @@ func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*
 
 	urlObj, err := url.Parse(constants.ImaluumPage)
 	if err != nil {
+    log.Printf("Failed to parse Imaluum Page: %v", err)
 		return nil, errors.ErrURLParseFailed
 	}
 
@@ -45,6 +47,7 @@ func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*
 	reqFirst, err := http.NewRequest("GET", constants.ImaluumCasPage, nil)
 	if err != nil {
 		reqFirst.Body.Close()
+    log.Printf("Failed to create first request: %v", err)
 		return nil, errors.ErrURLParseFailed
 	}
 
@@ -54,6 +57,7 @@ func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*
 	if err != nil {
 		// reqFirst.Body.Close()
 		// respFirst.Body.Close()
+    log.Printf("Failed to do first request: %v", err)
 		return nil, errors.ErrURLParseFailed
 	}
 	// if err := reqFirst.Body.Close(); err != nil {
@@ -70,6 +74,7 @@ func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*
 	// Second request
 	reqSecond, err := http.NewRequest("POST", constants.ImaluumLoginPage, strings.NewReader(formVal.Encode()))
 	if err != nil {
+    log.Printf("Failed to create second request: %v", err)
 		reqSecond.Body.Close()
 		return nil, errors.ErrURLParseFailed
 	}
@@ -78,6 +83,7 @@ func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*
 
 	if _, err := client.Do(reqSecond); err != nil {
 		// reqSecond.Body.Close()
+    log.Printf("Failed to do second request: %v", err)
 		return nil, errors.ErrURLParseFailed
 	}
 	// if err != nil {
