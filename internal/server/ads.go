@@ -17,7 +17,7 @@ import (
 // @Produce json
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /api/ads [get]
-func (s *Server) AdsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) AdsHandler(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	logger := s.log.GetLogger()
