@@ -17,6 +17,7 @@ import (
 	"github.com/nrmnqdds/gomaluum/internal/errors"
 	"github.com/nrmnqdds/gomaluum/pkg/utils"
 	"github.com/rung/go-safecast"
+	"go.uber.org/zap"
 )
 
 var UnwantedSessionQueries = [...]string{
@@ -60,7 +61,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err := c.Visit(constants.ImaluumSchedulePage); err != nil {
-		logger.Sugar().Error("Failed to go to URL")
+		logger.Sugar().Errorf("Failed to go to URL: %v", err)
 		errors.Render(w, errors.ErrFailedToGoToURL)
 		return
 	}
@@ -87,7 +88,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 			defer utils.CatchPanic("get schedule from session")
 			defer wg.Done()
 
-			response, err := getScheduleFromSession(clone, cookie, filteredQueries[i], filteredNames[i])
+			response, err := getScheduleFromSession(clone, cookie, filteredQueries[i], filteredNames[i], logger)
 			if err != nil {
 				logger.Sugar().Errorf("Failed to get schedule from session: %v", err)
 
@@ -139,7 +140,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getScheduleFromSession(c *colly.Collector, cookie string, sessionQuery string, sessionName string) (*dtos.ScheduleResponse, error) {
+func getScheduleFromSession(c *colly.Collector, cookie string, sessionQuery string, sessionName string, logger *zap.Logger) (*dtos.ScheduleResponse, error) {
 	url := constants.ImaluumSchedulePage + sessionQuery
 
 	var (
@@ -315,6 +316,7 @@ func getScheduleFromSession(c *colly.Collector, cookie string, sessionQuery stri
 	})
 
 	if err := c.Visit(url); err != nil {
+		logger.Sugar().Errorf("Failed to go to URL: %v", err)
 		return nil, errors.ErrFailedToGoToURL
 	}
 
