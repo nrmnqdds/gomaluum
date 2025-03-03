@@ -39,6 +39,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// All routes in this group start with /api
 	r.Route("/api", func(r chi.Router) {
+		// Backward compatibility
+		r.Post("/login", s.LoginHandler)
+
 		// Auth routes
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/login", s.LoginHandler)
@@ -59,6 +62,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 			r.Get("/profile", s.ProfileHandler)
 			r.Get("/schedule", s.ScheduleHandler)
 			r.Get("/result", s.ResultHandler)
+			r.Get("/logout", s.LogoutHandler)
 		})
 	})
 
