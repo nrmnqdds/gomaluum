@@ -20,19 +20,19 @@ import (
 func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*auth_proto.LoginResponse, error) {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
-    log.Printf("Failed to create cookie jar: %v", err)
+		log.Printf("Failed to create cookie jar: %v", err)
 		return nil, errors.ErrCookieJarCreationFailed
 	}
 
 	client := &http.Client{
-    Transport: s.httpClient.Transport,
-		Jar:     jar,
-		Timeout: time.Second * 10, // Indicates i-Ma'luum server is slow
+		Transport: s.httpClient.Transport,
+		Jar:       jar,
+		Timeout:   time.Second * 10, // Indicates i-Ma'luum server is slow
 	}
 
 	urlObj, err := url.Parse(constants.ImaluumPage)
 	if err != nil {
-    log.Printf("Failed to parse Imaluum Page: %v", err)
+		log.Printf("Failed to parse Imaluum Page: %v", err)
 		return nil, errors.ErrURLParseFailed
 	}
 
@@ -47,8 +47,11 @@ func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*
 	// First request
 	reqFirst, err := http.NewRequest("GET", constants.ImaluumCasPage, nil)
 	if err != nil {
-		reqFirst.Body.Close()
-    log.Printf("Failed to create first request: %v", err)
+		log.Printf("Failed to create first request: %v", err)
+		if err := reqFirst.Body.Close(); err != nil {
+			log.Printf("Failed to close request body: %v", err)
+			return nil, errors.ErrFailedToCloseRequestBody
+		}
 		return nil, errors.ErrURLParseFailed
 	}
 
@@ -56,43 +59,50 @@ func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*
 
 	respFirst, err := client.Do(reqFirst)
 	if err != nil {
-		// reqFirst.Body.Close()
-		// respFirst.Body.Close()
-    log.Printf("Failed to do first request: %v", err)
+		log.Printf("Failed to do first request: %v", err)
+		if err := reqFirst.Body.Close(); err != nil {
+			log.Printf("Failed to close request body: %v", err)
+			return nil, errors.ErrFailedToCloseRequestBody
+		}
+		if err := respFirst.Body.Close(); err != nil {
+			log.Printf("Failed to close response body: %v", err)
+			return nil, errors.ErrFailedToCloseResponseBody
+		}
 		return nil, errors.ErrURLParseFailed
 	}
-	// if err := reqFirst.Body.Close(); err != nil {
-	// 	log.Printf("Failed to close request body: %v", err)
-	// 	return nil, errors.ErrURLParseFailed
-	// }
-	// if err := respFirst.Body.Close(); err != nil {
-	// 	log.Printf("Failed to close response body: %v", err)
-	// 	return nil, errors.ErrURLParseFailed
-	// }
 
 	client.Jar.SetCookies(urlObj, respFirst.Cookies())
 
 	// Second request
 	reqSecond, err := http.NewRequest("POST", constants.ImaluumLoginPage, strings.NewReader(formVal.Encode()))
 	if err != nil {
-    log.Printf("Failed to create second request: %v", err)
-		reqSecond.Body.Close()
+		log.Printf("Failed to create second request: %v", err)
+		if err := reqSecond.Body.Close(); err != nil {
+			log.Printf("Failed to close request body: %v", err)
+			return nil, errors.ErrFailedToCloseRequestBody
+		}
 		return nil, errors.ErrURLParseFailed
 	}
 	reqSecond.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	setHeaders(reqSecond)
 
-	if _, err := client.Do(reqSecond); err != nil {
-		// reqSecond.Body.Close()
-    log.Printf("Failed to do second request: %v", err)
+	respSecond, err := client.Do(reqSecond)
+	if err != nil {
+		log.Printf("Failed to do second request: %v", err)
+		if err := reqSecond.Body.Close(); err != nil {
+			log.Printf("Failed to close request body: %v", err)
+			return nil, errors.ErrFailedToCloseRequestBody
+		}
+		if err := respSecond.Body.Close(); err != nil {
+			log.Printf("Failed to close response body: %v", err)
+			return nil, errors.ErrFailedToCloseResponseBody
+		}
 		return nil, errors.ErrURLParseFailed
 	}
-	// if err != nil {
-	// 	reqSecond.Body.Close()
-	// 	respSecond.Body.Close()
-	// 	return nil, errors.ErrURLParseFailed
-	// }
-	// respSecond.Body.Close()
+	if err := respSecond.Body.Close(); err != nil {
+		log.Printf("Failed to close response body: %v", err)
+		return nil, errors.ErrFailedToCloseResponseBody
+	}
 
 	cookies := client.Jar.Cookies(urlObj)
 

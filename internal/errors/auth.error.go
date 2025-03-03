@@ -20,4 +20,14 @@ var (
 		Message:    "Failed to encrypt password",
 		StatusCode: 500,
 	}
+
+	ErrFailedToCloseRequestBody = &CustomError{
+		Message:    "Failed to close request body",
+		StatusCode: 500,
+	}
+
+	ErrFailedToCloseResponseBody = &CustomError{
+		Message:    "Failed to close response body",
+		StatusCode: 500,
+	}
 )
