@@ -15,6 +15,7 @@ import (
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
 	"github.com/nrmnqdds/gomaluum/pkg/utils"
+	"go.uber.org/zap"
 )
 
 // @Title ResultHandler
@@ -41,6 +42,15 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 	stringBuilder.Grow(100)
 	stringBuilder.WriteString("MOD_AUTH_CAS=")
 	stringBuilder.WriteString(cookie)
+
+	httpClient, err := CreateHTTPClient()
+	if err != nil {
+		logger.Sugar().Errorf("Failed to create HTTP client: %v", err)
+		errors.Render(w, errors.ErrFailedToCreateHTTPClient)
+		return
+	}
+
+	c.WithTransport(httpClient.Transport)
 
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("Cookie", stringBuilder.String())
@@ -79,7 +89,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 		go func() {
 			defer utils.CatchPanic("get result from session")
 			defer wg.Done()
-			response, err := getResultFromSession(clone, cookie, filteredQueries[i], filteredNames[i])
+			response, err := getResultFromSession(clone, cookie, filteredQueries[i], filteredNames[i], logger)
 			if err != nil {
 				logger.Sugar().Errorf("Failed to get result from session: %v", err)
 
@@ -131,7 +141,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getResultFromSession(c *colly.Collector, cookie string, sessionQuery string, sessionName string) (*dtos.ResultResponse, error) {
+func getResultFromSession(c *colly.Collector, cookie string, sessionQuery string, sessionName string, logger *zap.Logger) (*dtos.ResultResponse, error) {
 	url := constants.ImaluumResultPage + sessionQuery
 
 	var (
@@ -146,6 +156,14 @@ func getResultFromSession(c *colly.Collector, cookie string, sessionQuery string
 		chr          string
 		status       string
 	)
+
+	httpClient, err := CreateHTTPClient()
+	if err != nil {
+		logger.Sugar().Errorf("Failed to create HTTP client: %v", err)
+		return nil, errors.ErrFailedToCreateHTTPClient
+	}
+
+	c.WithTransport(httpClient.Transport)
 
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
@@ -211,6 +229,7 @@ func getResultFromSession(c *colly.Collector, cookie string, sessionQuery string
 	})
 
 	if err := c.Visit(url); err != nil {
+		logger.Sugar().Errorf("Failed to go to URL: ", err)
 		return nil, errors.ErrFailedToGoToURL
 	}
 

@@ -50,6 +50,15 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	stringBuilder.WriteString("MOD_AUTH_CAS=")
 	stringBuilder.WriteString(cookie)
 
+	httpClient, err := CreateHTTPClient()
+	if err != nil {
+		logger.Sugar().Errorf("Failed to create HTTP client: %v", err)
+		errors.Render(w, errors.ErrFailedToCreateHTTPClient)
+		return
+	}
+
+	c.WithTransport(httpClient.Transport)
+
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("Cookie", stringBuilder.String())
 		r.Headers.Set("User-Agent", cuid.New())
@@ -147,6 +156,14 @@ func getScheduleFromSession(c *colly.Collector, cookie string, sessionQuery stri
 		mu       sync.Mutex
 		subjects = []dtos.ScheduleSubject{}
 	)
+
+	httpClient, err := CreateHTTPClient()
+	if err != nil {
+		logger.Sugar().Errorf("Failed to create HTTP client: %v", err)
+		return nil, errors.ErrFailedToCreateHTTPClient
+	}
+
+	c.WithTransport(httpClient.Transport)
 
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)

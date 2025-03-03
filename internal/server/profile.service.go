@@ -18,6 +18,14 @@ func (s *Server) Profile(cookie string) (*dtos.Profile, error) {
 		stringBuilder strings.Builder
 	)
 
+	httpClient, err := CreateHTTPClient()
+	if err != nil {
+		logger.Sugar().Errorf("Failed to create HTTP client: %v", err)
+		return nil, errors.ErrFailedToCreateHTTPClient
+	}
+
+	c.WithTransport(httpClient.Transport)
+
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
 		r.Headers.Set("User-Agent", cuid.New())

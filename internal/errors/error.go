@@ -62,4 +62,9 @@ var (
 		Message:    "Failed to encode response",
 		StatusCode: 500,
 	}
+
+	ErrFailedToCreateHTTPClient = &CustomError{
+		Message:    "Failed to create HTTP client",
+		StatusCode: 500,
+	}
 )
