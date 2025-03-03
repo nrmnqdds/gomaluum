@@ -1,9 +1,5 @@
 # Build stage
 FROM golang:1.23.2-alpine AS build
-LABEL org.opencontainers.image.source="https://github.com/nrmnqdds/gomaluum" \
-  org.opencontainers.image.description="Gomaluum API Server" \
-  org.opencontainers.image.version="2.0" \
-  org.opencontainers.image.licenses="Bantown Public License"
 
 WORKDIR /app
 
@@ -15,16 +11,24 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/gomaluum
 
+# Certificate stage
+FROM alpine:latest AS certs
+RUN apk --update add ca-certificates
+
 # Final stage
 FROM gcr.io/distroless/static-debian11 AS final
 
 # Copy binary from build stage
 COPY --from=build /app/gomaluum /
 
+# Copy certificates from the certs stage
+COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
 # Set environment variables
 ENV APP_ENV=production
 ENV PORT=1323
 ENV HOSTNAME=0.0.0.0
+ENV SSL_CERT_DIR=/etc/ssl/certs
 
 # Run as non-root user
 USER nonroot:nonroot
