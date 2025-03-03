@@ -109,7 +109,8 @@ func CreateHTTPClient() (*http.Client, error) {
 	// Create a custom transport with the enhanced certificate pool
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			RootCAs: rootCAs,
+			RootCAs:            rootCAs,
+			InsecureSkipVerify: true,
 		},
 	}
 
