@@ -30,12 +30,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Use(middleware.RedirectSlashes)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/reference", http.StatusMovedPermanently)
+		http.Redirect(w, r, "/docs/reference", http.StatusMovedPermanently)
 	})
 
 	r.Get("/health", s.HealthHandler())
 
-	r.Get("/reference", s.ScalarReference)
+	r.Get("/docs/reference", s.ScalarReference)
 
 	// All routes in this group start with /api
 	r.Route("/api", func(r chi.Router) {
