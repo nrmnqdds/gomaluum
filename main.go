@@ -19,6 +19,8 @@ import (
 	"github.com/nrmnqdds/gomaluum/internal/server"
 	"github.com/nrmnqdds/gomaluum/pkg/utils"
 	"google.golang.org/grpc"
+
+	"github.com/common-nighthawk/go-figure"
 )
 
 //go:embed docs/*
@@ -121,6 +123,9 @@ func main() {
 
 	// Run graceful shutdown in a separate goroutine
 	go gracefulShutdown(httpServer, grpcServer, done)
+
+	myFigure := figure.NewFigure("GoMaluum Rest API", "", true)
+	myFigure.Print()
 
 	// Start HTTP server
 	log.Printf("HTTP server listening on :%d", port)
