@@ -6,15 +6,12 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
-	"github.com/cloudflare/cloudflare-go"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
 	auth_proto "github.com/nrmnqdds/gomaluum/internal/proto"
-	cf "github.com/nrmnqdds/gomaluum/pkg/cloudflare"
 )
 
 func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*auth_proto.LoginResponse, error) {
@@ -109,14 +106,13 @@ func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*
 	for _, cookie := range cookies {
 		if cookie.Name == "MOD_AUTH_CAS" {
 
-			// Save the username and password to KV
+			// Save the username and password to KV for caching purpose
 			// Use goroutine to avoid blocking the main thread
-			// go SaveToKV(req.Username, req.Password)
-			go func() {
-				if err := SaveToKV(ctx, req.Username, req.Password); err != nil {
-					log.Printf("Failed to save to KV: %v", err)
-				}
-			}()
+			// go func() {
+			// 	if err := SaveToKV(ctx, req.Username, req.Password); err != nil {
+			// 		log.Printf("Failed to save to KV: %v", err)
+			// 	}
+			// }()
 
 			resp := &auth_proto.LoginResponse{
 				Token:    cookie.Value,
@@ -130,27 +126,4 @@ func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*
 	}
 
 	return nil, errors.ErrLoginFailed
-}
-
-func SaveToKV(ctx context.Context, username, password string) error {
-	kvEntryParams := cloudflare.WriteWorkersKVEntryParams{
-		NamespaceID: os.Getenv("KV_NAMESPACE_ID"),
-		Key:         username,
-		Value:       []byte(password),
-	}
-
-	kvResourceContainer := &cloudflare.ResourceContainer{
-		Level:      "accounts",
-		Identifier: os.Getenv("KV_USER_ID"),
-		Type:       "account",
-	}
-
-	cfClient := cf.New()
-	client := cfClient.GetClient()
-
-	if _, err := client.WriteWorkersKVEntry(ctx, kvResourceContainer, kvEntryParams); err != nil {
-		return err
-	}
-
-	return nil
 }
