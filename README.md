@@ -18,7 +18,7 @@ Support this project!
 
 A Reimplementation of the infamous [Simplified i-Ma'luum](https://imaluum.quddus.my) API in Go.
 
-Swagger API documentation is available at [here](https://api.quddus.my/reference).
+Swagger API documentation is available at [here](https://api.quddus.my/api/reference).
 
 What's difference from previous version
 ---------------------------------------
