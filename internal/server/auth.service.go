@@ -14,7 +14,7 @@ import (
 	auth_proto "github.com/nrmnqdds/gomaluum/internal/proto"
 )
 
-func (s *GRPCServer) Login(ctx context.Context, req *auth_proto.LoginRequest) (*auth_proto.LoginResponse, error) {
+func (s *GRPCServer) Login(_ context.Context, req *auth_proto.LoginRequest) (*auth_proto.LoginResponse, error) {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		log.Printf("Failed to create cookie jar: %v", err)
