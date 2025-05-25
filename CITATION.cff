@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use GoMaluum for your app, please cite it as below."
+authors:
+  - given-names: Nuriman Quddus
+    orcid: https://orcid.org/1234-5678-9101-1121
+title: "GoMaluum"
+version: 1.0.0
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.1234
+date-released: 2025-05-25
