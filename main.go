@@ -111,7 +111,8 @@ func main() {
 	// Start gRPC server in a goroutine
 	go func() {
 		defer utils.CatchPanic("gRPC server")
-		lis, err := net.Listen("tcp", ":50051")
+		// lis, err := net.Listen("tcp", ":50051")
+		lis, err := net.Listen("tcp", "0.0.0.0:50051")
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)
 		}
