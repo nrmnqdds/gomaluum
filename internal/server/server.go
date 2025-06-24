@@ -28,7 +28,7 @@ type GRPCServer struct {
 
 func NewGRPCServer() *GRPCServer {
 	// Create the HTTP client with proper certificate handling
-	httpClient, err := CreateHTTPClient()
+	httpClient, err := createHTTPClient()
 	if err != nil {
 		log.Fatalf("Failed to create HTTP client: %v", err)
 		return nil
@@ -55,7 +55,7 @@ func NewServer(port int, grpc *GRPCServer) *http.Server {
 	}
 
 	// Create the HTTP client with proper certificate handling
-	httpClient, err := CreateHTTPClient()
+	httpClient, err := createHTTPClient()
 	if err != nil {
 		log.Fatalf("Failed to create HTTP client: %v", err)
 		return nil
@@ -82,7 +82,7 @@ func NewServer(port int, grpc *GRPCServer) *http.Server {
 }
 
 // CreateHTTPClient returns an HTTP client configured with system and custom certificates
-func CreateHTTPClient() (*http.Client, error) {
+func createHTTPClient() (*http.Client, error) {
 	// Get system certificate pool
 	rootCAs, err := x509.SystemCertPool()
 	if err != nil {
@@ -108,6 +108,9 @@ func CreateHTTPClient() (*http.Client, error) {
 
 	// Create a custom transport with the enhanced certificate pool
 	transport := &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 10,
+		IdleConnTimeout:     90 * time.Second,
 		TLSClientConfig: &tls.Config{
 			RootCAs:            rootCAs,
 			InsecureSkipVerify: true,
