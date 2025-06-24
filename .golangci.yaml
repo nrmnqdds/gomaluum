@@ -1,13 +1,28 @@
-linters-settings:
-  govet:
-    enable:
-      - fieldalignment
+version: "2"
 linters:
-  disable:
-    # for swagger purpose
-    - staticcheck
   enable:
-    # https://github.com/mgechev/revive
     - revive
-    # https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/fieldalignment
-    - govet
+  disable:
+    - staticcheck
+  settings:
+    govet:
+      enable:
+        - fieldalignment
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

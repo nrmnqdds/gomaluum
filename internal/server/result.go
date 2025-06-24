@@ -25,12 +25,6 @@ var resultPool = sync.Pool{
 	},
 }
 
-var resultSlicePool = sync.Pool{
-	New: func() any {
-		return make([]dtos.Result, 0, 10)
-	},
-}
-
 var resultStringSlicePool = sync.Pool{
 	New: func() any {
 		return make([]string, 0, 10)
@@ -44,8 +38,8 @@ type resultJob struct {
 }
 
 type resultWorkerResult struct {
-	result dtos.ResultResponse
 	err    error
+	result dtos.ResultResponse
 }
 
 // Parse result table row with object pooling
@@ -140,7 +134,7 @@ func (s *Server) resultWorker(jobs <-chan resultJob, results chan<- resultWorker
 				tds := resultStringSlicePool.Get().([]string)
 				tds = tds[:0] // Reset slice
 
-				cells.Each(func(i int, s *goquery.Selection) {
+				cells.Each(func(_ int, s *goquery.Selection) {
 					tds = append(tds, s.Text())
 				})
 

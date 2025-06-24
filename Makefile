@@ -5,7 +5,7 @@ all: build test
 
 build:
 	@echo "Building..."
-	
+
 	@go build -o ./tmp/main ./main.go
 
 # Run the application
@@ -52,7 +52,7 @@ align:
 	else \
 		read -p "Go's 'betteralign' is not installed on your machine. Do you want to install it? [Y/n] " choice; \
 		if [ "$$choice" != "n" ] && [ "$$choice" != "N" ]; then \
-			go install github.com/dkorunic/betteralign@latest; \
+			go install github.com/dkorunic/cmd/betteralign@latest; \
 			betteralign -apply ./...; \
 		else \
 			echo "You chose not to install betteralign. Exiting..."; \
