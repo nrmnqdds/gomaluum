@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/bytedance/sonic"
@@ -77,12 +78,30 @@ func parseDays(dayStr string) []string {
 }
 
 // Normalize time format efficiently
-func normalizeTime(timeStr string) string {
+func normalizeTime(timeStr string) (string, *int64) {
 	trimmed := strings.TrimSpace(timeStr)
+
 	if len(trimmed) == 3 {
-		return "0" + trimmed
+		trimmed = fmt.Sprintf("0%s", trimmed) // Pad single-digit times
 	}
-	return trimmed
+
+	now := time.Now()
+
+	KLTimezone, err := time.LoadLocation("Asia/Kuala_Lumpur")
+	if err != nil {
+		fmt.Println("Error parsing time:", err)
+		return trimmed, nil
+	}
+
+	t, err := time.ParseInLocation("2006-01-02 1504", fmt.Sprintf("%04d-%02d-%02d %s", now.Year(), now.Month(), now.Day(), trimmed), KLTimezone)
+	if err != nil {
+		fmt.Println("Error parsing time:", err)
+		return trimmed, nil
+	}
+
+	unixTimestamp := t.Unix()
+
+	return trimmed, &unixTimestamp
 }
 
 // Parse table row with object pooling
@@ -127,15 +146,17 @@ func parseTableRow(tds []string, subjects *[]dtos.ScheduleSubject, mu *sync.Mute
 		if timeFullForm != constants.TimeSeparator && timePattern.MatchString(timeFullForm) {
 			timeParts := strings.Split(timeFullForm, constants.TimeSeparator)
 			if len(timeParts) == 2 {
-				start := normalizeTime(timeParts[0])
-				end := normalizeTime(timeParts[1])
+				start, startUnix := normalizeTime(timeParts[0])
+				end, endUnix := normalizeTime(timeParts[1])
 
 				for _, day := range days {
 					dayNum := utils.GetScheduleDays(day)
 					weekTimeSlice = append(weekTimeSlice, dtos.WeekTime{
-						Start: start,
-						End:   end,
-						Day:   dayNum,
+						Start:     start,
+						StartUnix: *startUnix,
+						End:       end,
+						EndUnix:   *endUnix,
+						Day:       dayNum,
 					})
 				}
 			}
@@ -171,15 +192,17 @@ func parseTableRow(tds []string, subjects *[]dtos.ScheduleSubject, mu *sync.Mute
 		if timePattern.MatchString(timeFullForm) {
 			timeParts := strings.Split(timeFullForm, "-")
 			if len(timeParts) == 2 {
-				start := normalizeTime(timeParts[0])
-				end := normalizeTime(timeParts[1])
+				start, startUnix := normalizeTime(timeParts[0])
+				end, endUnix := normalizeTime(timeParts[1])
 
 				for _, day := range days {
 					dayNum := utils.GetScheduleDays(day)
 					weekTimeSlice = append(weekTimeSlice, dtos.WeekTime{
-						Start: start,
-						End:   end,
-						Day:   dayNum,
+						Start:     start,
+						StartUnix: *startUnix,
+						End:       end,
+						EndUnix:   *endUnix,
+						Day:       dayNum,
 					})
 				}
 			}
