@@ -1,9 +1,11 @@
 package dtos
 
 type WeekTime struct {
-	Start string `json:"start"`
-	End   string `json:"end"`
-	Day   uint8  `json:"day"`
+	Start     string `json:"start"`
+	StartUnix int64  `json:"start_unix,omitempty"`
+	End       string `json:"end"`
+	EndUnix   int64  `json:"end_unix,omitempty"`
+	Day       uint8  `json:"day"`
 }
 
 type ScheduleSubject struct {
