@@ -25,9 +25,9 @@ var resultPool = sync.Pool{
 	},
 }
 
-var resultSlicePool = sync.Pool{
+var resultStringSlicePool = sync.Pool{
 	New: func() any {
-		return make([]dtos.Result, 0, 10)
+		return make([]string, 0, 10)
 	},
 }
 
