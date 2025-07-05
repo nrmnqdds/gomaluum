@@ -25,9 +25,9 @@ var resultPool = sync.Pool{
 	},
 }
 
-var resultStringSlicePool = sync.Pool{
+var resultSlicePool = sync.Pool{
 	New: func() any {
-		return make([]string, 0, 10)
+		return make([]dtos.Result, 0, 10)
 	},
 }
 
@@ -38,8 +38,8 @@ type resultJob struct {
 }
 
 type resultWorkerResult struct {
-	err    error
 	result dtos.ResultResponse
+	err    error
 }
 
 // Parse result table row with object pooling
