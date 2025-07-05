@@ -63,8 +63,8 @@ type scheduleJob struct {
 }
 
 type scheduleResult struct {
-	schedule dtos.ScheduleResponse
 	err      error
+	schedule dtos.ScheduleResponse
 }
 
 // Fast day parsing using pre-built map
@@ -236,7 +236,7 @@ func (s *Server) scheduleWorker(jobs <-chan scheduleJob, results chan<- schedule
 				tds := stringSlicePool.Get().([]string)
 				tds = tds[:0] // Reset slice
 
-				cells.Each(func(i int, s *goquery.Selection) {
+				cells.Each(func(_ int, s *goquery.Selection) {
 					tds = append(tds, s.Text())
 				})
 

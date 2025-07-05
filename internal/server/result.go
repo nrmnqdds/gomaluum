@@ -31,12 +31,6 @@ var resultSlicePool = sync.Pool{
 	},
 }
 
-var resultStringSlicePool = sync.Pool{
-	New: func() any {
-		return make([]string, 0, 10)
-	},
-}
-
 // Worker pool structures for results
 type resultJob struct {
 	query string
@@ -140,7 +134,7 @@ func (s *Server) resultWorker(jobs <-chan resultJob, results chan<- resultWorker
 				tds := resultStringSlicePool.Get().([]string)
 				tds = tds[:0] // Reset slice
 
-				cells.Each(func(i int, s *goquery.Selection) {
+				cells.Each(func(_ int, s *goquery.Selection) {
 					tds = append(tds, s.Text())
 				})
 
