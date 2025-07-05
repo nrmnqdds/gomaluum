@@ -1,10 +1,5 @@
-version: "2"
 linters:
   enable:
     - revive
   disable:
     - staticcheck
-  settings:
-    govet:
-      enable:
-        - fieldalignment
