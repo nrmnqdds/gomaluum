@@ -298,7 +298,7 @@ func (s *Server) processSchedulesWithWorkerPool(queries, names []string, cookie 
 	results := make(chan scheduleResult, len(queries))
 
 	// Start workers
-	for i := 0; i < maxWorkers; i++ {
+	for range maxWorkers {
 		go s.scheduleWorker(jobs, results, cookie)
 	}
 
@@ -317,7 +317,7 @@ func (s *Server) processSchedulesWithWorkerPool(queries, names []string, cookie 
 	var schedules []dtos.ScheduleResponse
 	var errors []error
 
-	for i := 0; i < len(queries); i++ {
+	for range queries {
 		result := <-results
 		if result.err != nil {
 			errors = append(errors, result.err)

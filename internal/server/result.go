@@ -177,7 +177,7 @@ func (s *Server) processResultsWithWorkerPool(queries, names []string, cookie st
 	results := make(chan resultWorkerResult, len(queries))
 
 	// Start workers
-	for i := 0; i < maxWorkers; i++ {
+	for range maxWorkers {
 		go s.resultWorker(jobs, results, cookie)
 	}
 
@@ -196,7 +196,7 @@ func (s *Server) processResultsWithWorkerPool(queries, names []string, cookie st
 	var resultResponses []dtos.ResultResponse
 	var errorList []error
 
-	for i := 0; i < len(queries); i++ {
+	for range queries {
 		result := <-results
 		if result.err != nil {
 			errorList = append(errorList, result.err)
