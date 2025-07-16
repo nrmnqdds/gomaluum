@@ -368,7 +368,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := c.Visit(constants.ImaluumSchedulePage); err != nil {
 		logger.Sugar().Errorf("Failed to go to URL: %v", err)
-		errors.Render(w, errors.ErrFailedToGoToURL)
+		errors.Render(w, r, errors.ErrFailedToGoToURL)
 		return
 	}
 
@@ -385,7 +385,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 
 	if len(filteredQueries) == 0 {
 		logger.Sugar().Error("No valid sessions found")
-		errors.Render(w, errors.ErrScheduleIsEmpty)
+		errors.Render(w, r, errors.ErrScheduleIsEmpty)
 		return
 	}
 
@@ -393,13 +393,13 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	schedules, err := s.processSchedulesWithWorkerPool(filteredQueries, filteredNames, cookie)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to process schedules: %v", err)
-		errors.Render(w, err)
+		errors.Render(w, r, err)
 		return
 	}
 
 	if len(schedules) == 0 {
 		logger.Sugar().Error("Schedule is empty")
-		errors.Render(w, errors.ErrScheduleIsEmpty)
+		errors.Render(w, r, errors.ErrScheduleIsEmpty)
 		return
 	}
 
@@ -415,6 +415,6 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
-		errors.Render(w, errors.ErrFailedToEncodeResponse)
+		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }

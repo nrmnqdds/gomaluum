@@ -26,7 +26,7 @@ func (s *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	profile, err := s.Profile(cookie)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to get profile: %v", err)
-		errors.Render(w, err)
+		errors.Render(w, r, err)
 		return
 	}
 
@@ -37,6 +37,6 @@ func (s *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
-		errors.Render(w, errors.ErrFailedToEncodeResponse)
+		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }

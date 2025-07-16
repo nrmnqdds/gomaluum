@@ -3,6 +3,8 @@ package errors
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/go-chi/render"
 )
 
 type CustomError struct {
@@ -24,6 +26,11 @@ func (e *CustomError) GetStatusCode() int {
 	return e.StatusCode
 }
 
+func (e *CustomError) Render(w http.ResponseWriter, r *http.Request) error {
+	render.Status(r, e.GetStatusCode())
+	return nil
+}
+
 // WrapError wraps an original error with a predefined CustomError
 func Wrap(predefError *CustomError, originalErr error) *CustomError {
 	return &CustomError{
@@ -33,13 +40,14 @@ func Wrap(predefError *CustomError, originalErr error) *CustomError {
 	}
 }
 
-func Render(w http.ResponseWriter, err error) {
+func Render(w http.ResponseWriter, r *http.Request, err error) {
 	re, ok := err.(*CustomError)
 	if !ok {
-		_, _ = w.Write([]byte(err.Error()))
+		render.Status(r, http.StatusInternalServerError)
+		render.Render(w, r, re)
 	}
-
-	_, _ = w.Write([]byte(re.Message))
+	render.Status(r, re.GetStatusCode())
+	render.Render(w, r, re)
 }
 
 var (

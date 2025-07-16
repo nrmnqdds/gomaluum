@@ -247,7 +247,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := c.Visit(constants.ImaluumResultPage); err != nil {
 		logger.Sugar().Errorf("Failed to go to URL: %v", err)
-		errors.Render(w, errors.ErrFailedToGoToURL)
+		errors.Render(w, r, errors.ErrFailedToGoToURL)
 		return
 	}
 
@@ -264,7 +264,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 
 	if len(filteredQueries) == 0 {
 		logger.Sugar().Error("No valid sessions found")
-		errors.Render(w, errors.ErrResultIsEmpty)
+		errors.Render(w, r, errors.ErrResultIsEmpty)
 		return
 	}
 
@@ -272,13 +272,13 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 	results, err := s.processResultsWithWorkerPool(filteredQueries, filteredNames, cookie)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to process results: %v", err)
-		errors.Render(w, err)
+		errors.Render(w, r, err)
 		return
 	}
 
 	if len(results) == 0 {
 		logger.Sugar().Error("Result is empty")
-		errors.Render(w, errors.ErrResultIsEmpty)
+		errors.Render(w, r, errors.ErrResultIsEmpty)
 		return
 	}
 
@@ -294,6 +294,6 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
-		errors.Render(w, errors.ErrFailedToEncodeResponse)
+		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }

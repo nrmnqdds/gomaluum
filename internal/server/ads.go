@@ -17,7 +17,7 @@ import (
 // @Produce json
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /api/ads [get]
-func (s *Server) AdsHandler(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) AdsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	logger := s.log.GetLogger()
@@ -35,7 +35,7 @@ func (s *Server) AdsHandler(w http.ResponseWriter, _ *http.Request) {
 
 	if err := c.Visit("https://souq.iium.edu.my/embeded"); err != nil {
 		logger.Sugar().Errorf("Failed to visit ads page: %v", err)
-		errors.Render(w, errors.ErrFailedToGoToURL)
+		errors.Render(w, r, errors.ErrFailedToGoToURL)
 		return
 	}
 
@@ -46,6 +46,6 @@ func (s *Server) AdsHandler(w http.ResponseWriter, _ *http.Request) {
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
-		errors.Render(w, errors.ErrFailedToEncodeResponse)
+		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }

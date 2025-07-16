@@ -34,14 +34,14 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Bind the request body to the user struct
 	if err := easyjson.UnmarshalFromReader(r.Body, user); err != nil {
 		logger.Sugar().Errorf("Failed to decode request body: %v", err)
-		errors.Render(w, errors.ErrInvalidRequest)
+		errors.Render(w, r, errors.ErrInvalidRequest)
 		return
 	}
 
 	// Call the Login method from the GRPC server
 	resp, err := s.grpc.Login(ctx, user)
 	if err != nil {
-		errors.Render(w, err)
+		errors.Render(w, r, err)
 		return
 	}
 
@@ -49,7 +49,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	newCookie, _, err := s.GeneratePasetoToken(resp.Token, resp.Username, resp.Password)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to generate PASETO token: %v", err)
-		errors.Render(w, errors.ErrFailedToDecodePASETO)
+		errors.Render(w, r, errors.ErrFailedToDecodePASETO)
 		return
 	}
 
@@ -65,7 +65,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
-		errors.Render(w, errors.ErrFailedToEncodeResponse)
+		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }
 
@@ -88,7 +88,7 @@ func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	urlObj, err := url.Parse(constants.ImaluumLogoutPage)
 	if err != nil {
-		errors.Render(w, errors.ErrURLParseFailed)
+		errors.Render(w, r, errors.ErrURLParseFailed)
 		return
 	}
 
@@ -108,7 +108,7 @@ func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		errors.Render(w, errors.ErrURLParseFailed)
+		errors.Render(w, r, errors.ErrURLParseFailed)
 		return
 	}
 	resp.Body.Close()
@@ -120,7 +120,7 @@ func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
 		logger.Sugar().Errorf("Failed to encode response: %v", err)
-		errors.Render(w, errors.ErrFailedToEncodeResponse)
+		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }
 

@@ -7,7 +7,7 @@ import (
 	"github.com/nrmnqdds/gomaluum/internal/errors"
 )
 
-func (s *Server) ScalarReference(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) ScalarReference(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	logger := s.log.GetLogger()
 	swaggerContent, err := DocsPath.ReadFile("docs/swagger/swagger.json")
@@ -24,7 +24,7 @@ func (s *Server) ScalarReference(w http.ResponseWriter, _ *http.Request) {
 	})
 	if err != nil {
 		logger.Sugar().Errorf("%v", err)
-		errors.Render(w, errors.ErrFailedToEncodeResponse)
+		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 
 	_, _ = w.Write([]byte(htmlContent))
