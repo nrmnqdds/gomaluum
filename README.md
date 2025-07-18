@@ -4,6 +4,23 @@ GoMa'luum
 i-Ma'luum scraper reimplementation with Go
 ------------------------------------------
 
+```mermaid
+flowchart TD
+    A["User sends request to GoMa'luum API"] --> B["GoMa'luum receives request"]
+    B --> C["GoMa'luum sends request to original endpoint (imaluum.edu.my)"]
+    C --> D["imaluum.edu.my returns auth cookie"]
+    D --> E["GoMa'luum stores auth cookie, wraps with PASETO token"]
+    E --> F["GoMa'luum uses cookie to scrape user data from imaluum.edu.my"]
+    F --> G["GoMa'luum processes and formats scraped data"]
+    G --> H["GoMa'luum returns pretty JSON/API response to user"]
+    H --> I["User views data in a pretty UI or via API"]
+    E --> J["PASETO token used for secure SSO/session management"]
+    B --> K["Request validation, logging, and error handling"]
+    F --> L["Concurrent scraping using goroutines for performance"]
+    G --> M["Optional: Cache data for faster repeated access"]
+    B --> N["gRPC support for internal/external service communication"]
+```
+
 <img src="https://github.com/nrmnqdds/simplified-imaluum/assets/65181897/2ad4fedc-1018-4779-b94a-5aae6f2944a3" width=100 />
 
 🚧 **In Construction** 🚧
