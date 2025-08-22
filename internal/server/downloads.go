@@ -54,9 +54,4 @@ func (s *Server) ExamSlipHandler(w http.ResponseWriter, r *http.Request) {
 		errors.Render(w, r, errors.ErrDownloadFailed)
 		return
 	}
-
-	// if err := sonic.ConfigFastest.NewEncoder(w).Encode(resp); err != nil {
-	// 	logger.Sugar().Errorf("Failed to encode response: %v", err)
-	// 	errors.Render(w, r, errors.ErrDownloadFailed)
-	// }
 }
