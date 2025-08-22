@@ -41,6 +41,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Call the Login method from the GRPC server
 	resp, err := s.grpc.Login(ctx, user)
 	if err != nil {
+		logger.Sugar().Errorf("Login failed: %v", err)
 		errors.Render(w, r, err)
 		return
 	}
