@@ -10,9 +10,14 @@ import (
 func (s *Server) ScalarReference(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	logger := s.log.GetLogger()
+
 	swaggerContent, err := DocsPath.ReadFile("docs/swagger/swagger.json")
 	if err != nil {
 		logger.Sugar().Fatalf("could not read swagger.json: %v", err)
+	}
+	customCSS, err := DocsPath.ReadFile("docs/swagger/flytheme.css")
+	if err != nil {
+		logger.Sugar().Fatalf("could not read flytheme.css: %v", err)
 	}
 
 	htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
@@ -20,7 +25,8 @@ func (s *Server) ScalarReference(w http.ResponseWriter, r *http.Request) {
 		CustomOptions: scalar.CustomOptions{
 			PageTitle: "GoMaluum API",
 		},
-		DarkMode: true,
+		DarkMode:  true,
+		CustomCss: string(customCSS),
 	})
 	if err != nil {
 		logger.Sugar().Errorf("%v", err)
