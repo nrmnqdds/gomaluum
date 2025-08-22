@@ -1,6 +1,8 @@
 GoMa'luum
 =========
 
+<img src="https://github.com/nrmnqdds/simplified-imaluum/assets/65181897/2ad4fedc-1018-4779-b94a-5aae6f2944a3" width=100 />
+
 🚧 **In Construction** 🚧
 -------------------------
 
@@ -33,9 +35,6 @@ flowchart TD
     G --> M["Optional: Cache data for faster repeated access"]
     B --> N["gRPC support for internal/external service communication"]
 ```
-
-<img src="https://github.com/nrmnqdds/simplified-imaluum/assets/65181897/2ad4fedc-1018-4779-b94a-5aae6f2944a3" width=100 />
-
 
 Local installation
 ------------------
