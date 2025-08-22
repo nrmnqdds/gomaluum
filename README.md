@@ -7,7 +7,7 @@
 > This project is **not** associated with the official i-Ma'luum!
 
 A proxy API which enables developers to build applications on top of i-Ma'luum.
-Primarily used be some IIUM's student-made app:
+Primarily used by some IIUM's student-made app:
 - [Simplified i-Ma'luum](https://imaluum.quddus.my)
 - [ProReg](https://proreg.app)
 
