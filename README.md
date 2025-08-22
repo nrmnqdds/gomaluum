@@ -1,7 +1,4 @@
-GoMa'luum
-=========
-
-<img src="https://github.com/nrmnqdds/simplified-imaluum/assets/65181897/2ad4fedc-1018-4779-b94a-5aae6f2944a3" width=100 />
+<img width="253" height="43" alt="gomaluum-v1" src="https://github.com/user-attachments/assets/faff3334-b0e3-4893-b527-253420a5f4d8" />
 
 🚧 **In Construction** 🚧
 -------------------------
