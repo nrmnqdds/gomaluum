@@ -127,12 +127,22 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 		cells.Each(func(_ int, s *goquery.Selection) {
 			if strings.TrimSpace(strings.Split(s.Text(), ":")[0]) == "Cummulative Average" {
 				// Special case for Cummulative Average row
+				if starpoint.CummulativeAverage != 0 {
+					logger.Sugar().Warn("Cummulative Average already set, skipping duplicate")
+					logger.Sugar().Debugf("Current value: %f, new value: %s", starpoint.CummulativeAverage, s.Text())
+					return
+				}
 				starpoint.CummulativeAverage = getFloatFromString(s.Text())
 				return
 			}
 
 			if strings.TrimSpace(strings.Split(s.Text(), ":")[0]) == "Total Point" {
 				// Special case for Total Point row
+				if starpoint.TotalPoints != 0 {
+					logger.Sugar().Warn("Total Point already set, skipping duplicate")
+					logger.Sugar().Debugf("Current value: %f, new value: %s", starpoint.CummulativeAverage, s.Text())
+					return
+				}
 				starpoint.TotalPoints = getFloatFromString(s.Text())
 				return
 			}
