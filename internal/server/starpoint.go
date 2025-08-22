@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -25,9 +24,10 @@ var programPool = sync.Pool{
 	},
 }
 
-type starpointResult struct {
-	err      error
-	schedule dtos.Starpoint
+var programTdStringSlicePool = sync.Pool{
+	New: func() any {
+		return make([]string, 0, 10)
+	},
 }
 
 // Parse table row with object pooling
@@ -37,8 +37,6 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 	}
 
 	var program *dtos.StarpointProgram
-
-	log.Printf("td length: %v", len(tds))
 
 	// Handle perfect cell (6 columns)
 	if len(tds) == 6 {
@@ -76,6 +74,17 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 	}
 }
 
+func getFloatFromString(s string) float64 {
+	ca := strings.TrimSpace(strings.Split(s, ":")[1])
+
+	points, err := strconv.ParseFloat(ca, 64)
+	if err != nil {
+		return 0
+	}
+
+	return points
+}
+
 // @Title StarpointHandler
 // @Description Get co-curricular from i-Ma'luum
 // @Tags scraper
@@ -87,10 +96,11 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var (
-		logger   = s.log.GetLogger()
-		cookie   = r.Context().Value(ctxToken).(string)
-		mu       sync.Mutex
-		programs []dtos.StarpointProgram
+		logger    = s.log.GetLogger()
+		cookie    = r.Context().Value(ctxToken).(string)
+		mu        sync.Mutex
+		programs  []dtos.StarpointProgram
+		starpoint = &dtos.Starpoint{}
 	)
 
 	// Pre-build cookie string once
@@ -111,15 +121,26 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		tds := stringSlicePool.Get().([]string)
+		tds := programTdStringSlicePool.Get().([]string)
 		tds = tds[:0] // Reset slice
 
 		cells.Each(func(_ int, s *goquery.Selection) {
+			if strings.TrimSpace(strings.Split(s.Text(), ":")[0]) == "Cummulative Average" {
+				// Special case for Cummulative Average row
+				starpoint.CummulativeAverage = getFloatFromString(s.Text())
+				return
+			}
+
+			if strings.TrimSpace(strings.Split(s.Text(), ":")[0]) == "Total Point" {
+				// Special case for Total Point row
+				starpoint.TotalPoints = getFloatFromString(s.Text())
+				return
+			}
 			tds = append(tds, s.Text())
 		})
-
 		parseProgramRows(tds, &programs, &mu)
-		stringSlicePool.Put(tds)
+
+		programTdStringSlicePool.Put(tds)
 	})
 
 	if err := c.Visit(constants.ImaluumStarpointPage); err != nil {
@@ -134,9 +155,13 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set starpoint data
+	starpoint.Programs = programs
+	starpoint.ID = fmt.Sprintf("gomaluum:starpoint:%s", cuid.Slug())
+
 	response := &dtos.ResponseDTO{
 		Message: "Successfully fetched starpoints programs",
-		Data:    programs,
+		Data:    starpoint,
 	}
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
