@@ -64,6 +64,35 @@
                 }
             }
         },
+        "/api/download/study-plan": {
+            "get": {
+                "description": "Get study plan PDF from i-Ma'luum",
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "scraper"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Exam slip PDF",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/profile": {
             "get": {
                 "description": "Get i-Ma'luum profile",
