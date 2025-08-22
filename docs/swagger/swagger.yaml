@@ -57,6 +57,25 @@ paths:
             type: string
       tags:
       - scraper
+  /api/download/study-plan:
+    get:
+      description: Get study plan PDF from i-Ma'luum
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/pdf
+      responses:
+        "200":
+          description: Exam slip PDF
+          schema:
+            type: string
+      tags:
+      - scraper
   /api/profile:
     get:
       description: Get i-Ma'luum profile

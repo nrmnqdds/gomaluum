@@ -67,6 +67,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 			r.Route("/download", func(r chi.Router) {
 				r.Get("/exam-slip", s.ExamSlipHandler)
+				r.Get("/study-plan", s.StudyPlanHandler)
 			})
 		})
 	})
