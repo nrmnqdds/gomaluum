@@ -133,6 +133,25 @@ paths:
             $ref: '#/definitions/dtos.ResponseDTO'
       tags:
       - scraper
+  /api/starpoint:
+    get:
+      description: Get co-curricular from i-Ma'luum
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ResponseDTO'
+      tags:
+      - scraper
   /auth/login:
     post:
       consumes:
