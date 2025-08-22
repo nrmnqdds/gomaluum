@@ -14,7 +14,7 @@ Primarily used be some IIUM's student-made app:
 
 Swagger API documentation is available at [here](https://api.quddus.my/api/reference).
 
-i-Ma'luum scraper reimplementation with Go
+How it works under the hood
 ------------------------------------------
 
 ```mermaid
