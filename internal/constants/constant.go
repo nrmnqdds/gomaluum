@@ -14,5 +14,6 @@ const (
 	ImaluumConfirmationSlipPage = "https://imaluum.iium.edu.my/MyAcademic/confirmation-sem"
 	ImaluumExamSlipPage         = "https://imaluum.iium.edu.my/examslip"
 	ImaluumStudyPlanPage        = "https://imaluum.iium.edu.my/MyAcademic/studyplan"
+	ImaluumStarpointPage        = "https://imaluum.iium.edu.my/CoCurriculum"
 	TimeSeparator               = "-"
 )

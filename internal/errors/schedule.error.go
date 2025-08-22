@@ -2,5 +2,5 @@ package errors
 
 var ErrScheduleIsEmpty = &CustomError{
 	Message:    "Schedule is empty",
-	StatusCode: 500,
+	StatusCode: 404,
 }
