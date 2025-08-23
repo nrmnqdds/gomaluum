@@ -42,7 +42,7 @@
                     "application/pdf"
                 ],
                 "tags": [
-                    "scraper"
+                    "download"
                 ],
                 "parameters": [
                     {
@@ -71,7 +71,7 @@
                     "application/pdf"
                 ],
                 "tags": [
-                    "scraper"
+                    "download"
                 ],
                 "parameters": [
                     {

@@ -11,7 +11,7 @@ import (
 
 // @Title ExamSlipHandler
 // @Description Get exam slip PDF from i-Ma'luum
-// @Tags scraper
+// @Tags download
 // @Produce application/pdf
 // @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 200 {string} string "Exam slip PDF"
@@ -55,7 +55,7 @@ func (s *Server) ExamSlipHandler(w http.ResponseWriter, r *http.Request) {
 
 // @Title StudyPlanHandler
 // @Description Get study plan PDF from i-Ma'luum
-// @Tags scraper
+// @Tags download
 // @Produce application/pdf
 // @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 200 {string} string "Exam slip PDF"

@@ -56,7 +56,7 @@ paths:
           schema:
             type: string
       tags:
-      - scraper
+      - download
   /api/download/study-plan:
     get:
       description: Get study plan PDF from i-Ma'luum
@@ -75,7 +75,7 @@ paths:
           schema:
             type: string
       tags:
-      - scraper
+      - download
   /api/profile:
     get:
       description: Get i-Ma'luum profile
