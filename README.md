@@ -1,4 +1,4 @@
-<img width="253" height="43" alt="gomaluum-v1" src="https://github.com/user-attachments/assets/faff3334-b0e3-4893-b527-253420a5f4d8" />
+<img width="253" height="43" alt="gomaluum-v1" src="https://raw.githubusercontent.com/nrmnqdds/gomaluum/refs/heads/main/assets/gomaluum-logo-v2.png" />
 
 🚧 **In Construction** 🚧
 -------------------------
