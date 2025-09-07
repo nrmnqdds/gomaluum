@@ -11,6 +11,7 @@ import (
 	auth_proto "github.com/nrmnqdds/gomaluum/internal/proto"
 	"github.com/nrmnqdds/gomaluum/pkg/logger"
 	"github.com/nrmnqdds/gomaluum/pkg/paseto"
+	"github.com/nrmnqdds/gomaluum/pkg/sf"
 )
 
 type Handlers interface {
@@ -40,11 +41,12 @@ func NewGRPCServer() *GRPCServer {
 }
 
 type Server struct {
-	log        *logger.AppLogger
-	paseto     *paseto.AppPaseto
-	grpc       *GRPCServer
-	httpClient *http.Client
-	port       int
+	log          *logger.AppLogger
+	paseto       *paseto.AppPaseto
+	grpc         *GRPCServer
+	httpClient   *http.Client
+	port         int
+	tokenManager *sf.TokenManager
 }
 
 func NewServer(port int, grpc *GRPCServer) *http.Server {
@@ -61,12 +63,15 @@ func NewServer(port int, grpc *GRPCServer) *http.Server {
 		return nil
 	}
 
+	tm := sf.NewTokenManager()
+
 	NewServer := &Server{
-		port:       port,
-		log:        logger.New(),
-		paseto:     paseto,
-		grpc:       grpc,
-		httpClient: httpClient,
+		port:         port,
+		log:          logger.New(),
+		paseto:       paseto,
+		grpc:         grpc,
+		httpClient:   httpClient,
+		tokenManager: tm,
 	}
 
 	// Declare Server config

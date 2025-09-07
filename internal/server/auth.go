@@ -46,8 +46,14 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	payload := TokenPayload{
+		username:      resp.Username,
+		password:      resp.Password,
+		imaluumCookie: resp.Token,
+	}
+
 	// Generate a new PASETO token
-	newCookie, _, err := s.GeneratePasetoToken(resp.Token, resp.Username, resp.Password)
+	newCookie, _, err := s.GeneratePasetoToken(payload)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to generate PASETO token: %v", err)
 		errors.Render(w, r, errors.ErrFailedToDecodePASETO)
