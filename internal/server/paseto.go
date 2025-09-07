@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/cristalhq/base64"
@@ -10,11 +11,17 @@ import (
 	pb "github.com/nrmnqdds/gomaluum/internal/proto"
 )
 
+type TokenPayload struct {
+	username      string
+	password      string
+	imaluumCookie string
+}
+
 // GeneratePasetoToken generates a PASETO token for the given original uia cookie
 // origin: the original uia cookie
 // username: the username of the user
 // password: the password of the user in base64
-func (s *Server) GeneratePasetoToken(origin, username, originPassword string) (string, string, error) {
+func (s *Server) GeneratePasetoToken(payload TokenPayload) (string, string, error) {
 	token := s.paseto.Token
 
 	token.SetIssuedAt(time.Now())
@@ -24,11 +31,15 @@ func (s *Server) GeneratePasetoToken(origin, username, originPassword string) (s
 	// token.SetExpiration(time.Now().Add(time.Minute * 1)) // 1 minutes
 	token.SetIssuer("gomaluum")
 
+	originPassword := payload.password
+	imaluumCookie := payload.imaluumCookie
+	username := payload.username
+
 	// encode the base64 password
 	password := []byte(originPassword)
 	base64Password := base64.StdEncoding.EncodeToString(password)
 
-	token.SetString("origin", origin)
+	token.SetString("imaluumCookie", imaluumCookie)
 	token.SetString("username", username)
 	token.SetString("password", base64Password)
 
@@ -36,11 +47,11 @@ func (s *Server) GeneratePasetoToken(origin, username, originPassword string) (s
 
 	s.paseto.Token = token
 
-	return signed, origin, nil
+	return signed, imaluumCookie, nil
 }
 
 // DecodePasetoToken decodes the given PASETO token and returns the original uia cookie
-func (s *Server) DecodePasetoToken(token string) (string, error) {
+func (s *Server) DecodePasetoToken(token string) (*TokenPayload, error) {
 	parser := paseto.NewParserWithoutExpiryCheck() // Don't use NewParser() which will checks expiry by default
 	logger := s.log.GetLogger()
 
@@ -54,13 +65,13 @@ func (s *Server) DecodePasetoToken(token string) (string, error) {
 	if err != nil {
 		logger.Sugar().Errorf("Failed to parse token: %v", err)
 
-		return "", err
+		return nil, err
 	}
 
 	tokenExpiryDate, err := decodedToken.GetExpiration()
 	if err != nil {
 		logger.Sugar().Errorf("Failed to get expiration: %v", err)
-		return "", err
+		return nil, err
 	}
 
 	today := time.Now()
@@ -76,29 +87,50 @@ func (s *Server) DecodePasetoToken(token string) (string, error) {
 		decodedPassword, err := base64.StdEncoding.DecodeString(password)
 		if err != nil {
 			logger.Sugar().Errorf("Failed to decode password: %v", err)
-			return "", err
+			return nil, err
 		}
-		// regenerate the token
-		logger.Sugar().Infof("Refreshing session token with username: %s, password: %s", username, string(decodedPassword))
 
-		resp, err := s.grpc.Login(ctx, &pb.LoginRequest{
-			Username: username,
-			Password: string(decodedPassword),
-		})
+		refresh := func() (string, time.Time, error) {
+			// regenerate the token
+			logger.Sugar().Infof("Refreshing session token with username: %s, password: %s", username, string(decodedPassword))
 
+			resp, err := s.grpc.Login(ctx, &pb.LoginRequest{
+				Username: username,
+				Password: string(decodedPassword),
+			})
+
+			if err != nil {
+				logger.Sugar().Errorf("Failed to login: %v", err)
+				return "", time.Now(), err
+			}
+
+			return resp.Token, time.Now(), nil
+		}
+
+		newToken, err := s.tokenManager.GetToken(username, refresh)
 		if err != nil {
-			logger.Sugar().Errorf("Failed to login: %v", err)
-			return "", err
+			logger.Sugar().Errorf("Failed to get token: %v", err)
+			log.Fatal(err)
 		}
 
-		logger.Sugar().Infof("Regenerated token: %s with origin for user: %s", resp.Token, username)
-		return resp.Token, nil
+		logger.Sugar().Infof("Refreshed token: %s with origin for user: %s", newToken, username)
+		return &TokenPayload{
+			username:      username,
+			password:      string(decodedPassword),
+			imaluumCookie: newToken,
+		}, nil
+
+		// End of if token expired
 	}
 
-	origin, err := decodedToken.GetString("origin")
-	if err != nil {
-		return "", err
-	}
+	// If token not expired yet
+	username, _ := decodedToken.GetString("username")
+	password, _ := decodedToken.GetString("password")
+	imaluumCookie, _ := decodedToken.GetString("imaluumCookie")
 
-	return origin, nil
+	return &TokenPayload{
+		username:      username,
+		password:      password,
+		imaluumCookie: imaluumCookie,
+	}, nil
 }
