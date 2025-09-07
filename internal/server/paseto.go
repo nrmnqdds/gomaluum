@@ -19,7 +19,8 @@ func (s *Server) GeneratePasetoToken(origin, username, originPassword string) (s
 
 	token.SetIssuedAt(time.Now())
 	token.SetNotBefore(time.Now())
-	token.SetExpiration(time.Now().Add(time.Minute * 30)) // 30 minutes
+	// token.SetExpiration(time.Now().Add(time.Minute * 30)) // 30 minutes
+	token.SetExpiration(time.Now()) // now
 	// token.SetExpiration(time.Now().Add(time.Minute * 1)) // 1 minutes
 	token.SetIssuer("gomaluum")
 
@@ -56,13 +57,16 @@ func (s *Server) DecodePasetoToken(token string) (string, error) {
 		return "", err
 	}
 
-	exp, err := decodedToken.GetExpiration()
+	tokenExpiryDate, err := decodedToken.GetExpiration()
 	if err != nil {
 		logger.Sugar().Errorf("Failed to get expiration: %v", err)
 		return "", err
 	}
 
-	if exp.Before(time.Now()) {
+	today := time.Now()
+
+	// if the token has expired, we need to regenerate it
+	if today.After(tokenExpiryDate) {
 		logger.Info("Token has expired")
 
 		username, _ := decodedToken.GetString("username")
@@ -75,25 +79,20 @@ func (s *Server) DecodePasetoToken(token string) (string, error) {
 			return "", err
 		}
 		// regenerate the token
-		logger.Sugar().Infof("Regenerating token with username: %s, password: %s", username, string(decodedPassword))
+		logger.Sugar().Infof("Refreshing session token with username: %s, password: %s", username, string(decodedPassword))
 
 		resp, err := s.grpc.Login(ctx, &pb.LoginRequest{
 			Username: username,
 			Password: string(decodedPassword),
 		})
+
 		if err != nil {
 			logger.Sugar().Errorf("Failed to login: %v", err)
 			return "", err
 		}
 
-		_, origin, err := s.GeneratePasetoToken(resp.Token, username, string(decodedPassword))
-		if err != nil {
-			logger.Sugar().Errorf("Failed to regenerate token: %v", err)
-			return "", err
-		}
-
-		logger.Sugar().Infof("Regenerated token: %s with origin for user: %s", origin, username)
-		return origin, nil
+		logger.Sugar().Infof("Regenerated token: %s with origin for user: %s", resp.Token, username)
+		return resp.Token, nil
 	}
 
 	origin, err := decodedToken.GetString("origin")
