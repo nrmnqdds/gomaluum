@@ -13,7 +13,12 @@ RUN go mod download
 
 # Copy source code and build
 COPY . .
+
+# Build main binary
 RUN CGO_ENABLED=0 GOOS=linux go build --ldflags="-checklinkname=0" -o /app/gomaluum
+
+# Build healthcheck binary (points to /health/main.go)
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/health ./health
 
 # Certificate stage
 FROM alpine:latest AS certs
@@ -24,6 +29,7 @@ FROM gcr.io/distroless/static-debian11 AS final
 
 # Copy binary from build stage
 COPY --from=build /app/gomaluum /
+COPY --from=build /app/health /
 
 # Copy certificates from the certs stage
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
@@ -41,9 +47,8 @@ USER nonroot:nonroot
 EXPOSE 50051
 EXPOSE 1323
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD curl -f http://localhost:1323/health || exit 1
+# Health check (use custom Go health binary)
+HEALTHCHECK --interval=30s --timeout=3s CMD ["/health"]
 
 # Entrypoint
 ENTRYPOINT ["/gomaluum", "-p"]
