@@ -16,15 +16,22 @@ func (s *Server) PasetoAuthenticator() func(http.Handler) http.Handler {
 	logger := s.log.GetLogger()
 	return func(next http.Handler) http.Handler {
 		hfn := func(w http.ResponseWriter, r *http.Request) {
-			fullAauthHeader := r.Header.Get("Authorization")
+			fullAuthHeader := r.Header.Get("Authorization")
 			path := r.URL.Path
 
+			// Skip authentication for login route
 			if path == "/api/login" {
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			authHeader := fullAauthHeader[7:]
+			if fullAuthHeader == "" || len(fullAuthHeader) < 7 || fullAuthHeader[:7] != "Bearer " {
+				logger.Sugar().Warn("Authorization header is missing or invalid")
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				return
+			}
+
+			authHeader := fullAuthHeader[7:]
 
 			token, err := s.DecodePasetoToken(authHeader)
 			if err != nil {
