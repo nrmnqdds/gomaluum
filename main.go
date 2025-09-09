@@ -20,7 +20,7 @@ import (
 	"github.com/nrmnqdds/gomaluum/pkg/utils"
 	"google.golang.org/grpc"
 
-	"github.com/common-nighthawk/go-figure"
+	"github.com/jwalton/gchalk"
 )
 
 //go:embed docs/*
@@ -105,34 +105,58 @@ func main() {
 	server.DocsPath = DocsPath
 	httpServer := server.NewServer(port, grpcService)
 
-	// Create a done channel to signal when the shutdown is complete
+	// Create channels to track when both servers are running
 	done := make(chan bool, 1)
+	grpcReady := make(chan bool, 1)
+	httpReady := make(chan bool, 1)
+
+	// myFigure := figure.NewFigure("GoMaluum Rest API", "", true)
+	// myFigure.Print()
+	fmt.Println(gchalk.Blue(`
+
+ ██████╗  ██████╗ ███╗   ███╗ █████╗ ██╗     ██╗   ██╗██╗   ██╗███╗   ███╗
+██╔════╝ ██╔═══██╗████╗ ████║██╔══██╗██║     ██║   ██║██║   ██║████╗ ████║
+██║  ███╗██║   ██║██╔████╔██║███████║██║     ██║   ██║██║   ██║██╔████╔██║
+██║   ██║██║   ██║██║╚██╔╝██║██╔══██║██║     ██║   ██║██║   ██║██║╚██╔╝██║
+╚██████╔╝╚██████╔╝██║ ╚═╝ ██║██║  ██║███████╗╚██████╔╝╚██████╔╝██║ ╚═╝ ██║
+ ╚═════╝  ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     ╚═╝
+
+		`))
+
+	fmt.Println(gchalk.Yellow("====================================================="))
 
 	// Start gRPC server in a goroutine
 	go func() {
 		defer utils.CatchPanic("gRPC server")
-		// lis, err := net.Listen("tcp", ":50051")
 		lis, err := net.Listen("tcp", "0.0.0.0:50051")
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)
 		}
-		log.Printf("gRPC server listening on :50051")
+		fmt.Println(gchalk.Blue("gRPC server listening on :50051"))
+		grpcReady <- true
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("failed to serve gRPC: %v", err)
 		}
 	}()
 
+	// Start HTTP server
+	go func() {
+		fmt.Println(gchalk.Blue(fmt.Sprintf("HTTP server listening on :%d", port)))
+		httpReady <- true
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			panic(fmt.Sprintf("http server error: %s", err))
+		}
+	}()
+
+	// Wait for both servers to be ready and print final separator
+	go func() {
+		<-grpcReady
+		<-httpReady
+		fmt.Println(gchalk.Yellow("====================================================="))
+	}()
+
 	// Run graceful shutdown in a separate goroutine
 	go gracefulShutdown(httpServer, grpcServer, done)
-
-	myFigure := figure.NewFigure("GoMaluum Rest API", "", true)
-	myFigure.Print()
-
-	// Start HTTP server
-	log.Printf("HTTP server listening on :%d", port)
-	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		panic(fmt.Sprintf("http server error: %s", err))
-	}
 
 	// Wait for the graceful shutdown to complete
 	<-done
