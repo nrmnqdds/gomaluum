@@ -21,7 +21,7 @@ import (
 // @Produce json
 // @Param body body pb.LoginRequest true "Login properties"
 // @Success 200 {object} dtos.ResponseDTO
-// @Router /auth/login [post]
+// @Router /api/auth/login [post]
 func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
