@@ -7,7 +7,6 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
-	_ "modernc.org/sqlite"
 )
 
 func (s *Server) UpdateAnalytics(matricNo string) error {

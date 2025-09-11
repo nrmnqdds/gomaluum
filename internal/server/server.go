@@ -13,6 +13,8 @@ import (
 	"github.com/nrmnqdds/gomaluum/pkg/logger"
 	"github.com/nrmnqdds/gomaluum/pkg/paseto"
 	"github.com/nrmnqdds/gomaluum/pkg/sf"
+
+	_ "modernc.org/sqlite"
 )
 
 type Handlers interface {
