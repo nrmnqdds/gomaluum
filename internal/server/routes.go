@@ -40,6 +40,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 		// Scalar UI
 		r.Get("/reference", s.ScalarReference)
 
+		r.Get("/analytics", s.GetAnalyticsSummaryHandler)
+
 		// Backward compatibility
 		r.Post("/login", s.LoginHandler)
 

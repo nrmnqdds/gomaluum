@@ -3,6 +3,7 @@ package server
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,6 +13,8 @@ import (
 	"github.com/nrmnqdds/gomaluum/pkg/logger"
 	"github.com/nrmnqdds/gomaluum/pkg/paseto"
 	"github.com/nrmnqdds/gomaluum/pkg/sf"
+
+	_ "modernc.org/sqlite"
 )
 
 type Handlers interface {
@@ -47,6 +50,7 @@ type Server struct {
 	httpClient   *http.Client
 	port         int
 	tokenManager *sf.TokenManager
+	db           *sql.DB
 }
 
 func NewServer(port int, grpc *GRPCServer) *http.Server {
@@ -63,6 +67,35 @@ func NewServer(port int, grpc *GRPCServer) *http.Server {
 		return nil
 	}
 
+	db, err := sql.Open("sqlite", "./data/analytics.db?cache=shared&journal_mode=WAL")
+	if err != nil {
+		log.Fatalf("Failed to create database connection: %v", err)
+		return nil
+	}
+
+	schema := []string{
+		`CREATE TABLE IF NOT EXISTS analytics (
+			matric_no TEXT NOT NULL PRIMARY KEY,
+			batch AS (substr(matric_no, 1, 2) + 2000) STORED,
+			level AS (
+				CASE length(matric_no)
+					WHEN 7 THEN 'DEGREE'
+					WHEN 6 THEN 'CFS'
+				END
+			) STORED,
+			timestamp DATETIME DEFAULT current_timestamp
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_batch ON analytics(batch)`,
+		`CREATE INDEX IF NOT EXISTS idx_level ON analytics(level)`,
+		`CREATE INDEX IF NOT EXISTS idx_batch_level ON analytics(batch, level)`,
+	}
+
+	for _, stmt := range schema {
+		if _, err := db.Exec(stmt); err != nil {
+			return nil
+		}
+	}
+
 	tm := sf.NewTokenManager()
 
 	NewServer := &Server{
@@ -72,6 +105,7 @@ func NewServer(port int, grpc *GRPCServer) *http.Server {
 		grpc:         grpc,
 		httpClient:   httpClient,
 		tokenManager: tm,
+		db:           db,
 	}
 
 	// Declare Server config
@@ -97,19 +131,6 @@ func createHTTPClient() (*http.Client, error) {
 	if rootCAs == nil {
 		rootCAs = x509.NewCertPool()
 	}
-
-	// Optionally load custom certificates if needed
-	// Uncomment if you have specific certificates to add
-	/*
-		customCert, err := ioutil.ReadFile("/etc/ssl/custom-cert.pem")
-		if err != nil {
-			return nil, fmt.Errorf("failed to read custom cert: %w", err)
-		}
-
-		if ok := rootCAs.AppendCertsFromPEM(customCert); !ok {
-			return nil, fmt.Errorf("failed to append custom cert")
-		}
-	*/
 
 	// Create a custom transport with the enhanced certificate pool
 	transport := &http.Transport{

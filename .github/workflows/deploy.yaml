@@ -1,4 +1,4 @@
-name: Deploy Images to EC2
+name: Deploy Images to Digital Ocean
 on:
   push:
     branches:
