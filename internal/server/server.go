@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	auth_proto "github.com/nrmnqdds/gomaluum/internal/proto"
@@ -14,7 +15,7 @@ import (
 	"github.com/nrmnqdds/gomaluum/pkg/paseto"
 	"github.com/nrmnqdds/gomaluum/pkg/sf"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
 type Handlers interface {
@@ -67,7 +68,7 @@ func NewServer(port int, grpc *GRPCServer) *http.Server {
 		return nil
 	}
 
-	db, err := sql.Open("sqlite", "./data/analytics.db?cache=shared&journal_mode=WAL")
+	db, err := sql.Open("libsql", os.Getenv("DB_PATH"))
 	if err != nil {
 		log.Fatalf("Failed to create database connection: %v", err)
 		return nil

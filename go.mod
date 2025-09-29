@@ -23,11 +23,11 @@ require (
 	github.com/rung/go-safecast v1.0.1
 	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/swag v1.16.4
+	github.com/tursodatabase/libsql-client-go v0.0.0-20240902231107-85af5b9d094d
 	go.uber.org/zap v1.27.0
 	golang.org/x/sync v0.17.0
 	google.golang.org/grpc v1.69.2
 	google.golang.org/protobuf v1.36.0
-	modernc.org/sqlite v1.38.2
 )
 
 require (
@@ -40,10 +40,11 @@ require (
 	github.com/antchfx/htmlquery v1.3.4 // indirect
 	github.com/antchfx/xmlquery v1.4.3 // indirect
 	github.com/antchfx/xpath v1.3.3 // indirect
+	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/bytedance/sonic/loader v0.2.2 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
+	github.com/coder/websocket v1.8.12 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/spec v0.20.4 // indirect
@@ -53,14 +54,10 @@ require (
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect
@@ -78,7 +75,4 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241219192143-6b3ec007d9bb // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/libc v1.66.8 // indirect
-	modernc.org/mathutil v1.7.1 // indirect
-	modernc.org/memory v1.11.0 // indirect
 )
