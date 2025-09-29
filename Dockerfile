@@ -22,7 +22,7 @@ FROM alpine:latest AS certs
 RUN apk --update add ca-certificates
 
 # Final stage
-FROM gcr.io/distroless/static-debian11 AS final
+FROM alpine:latest AS final
 
 # Copy binary from build stage
 COPY --from=build /app/gomaluum /
@@ -35,9 +35,6 @@ ENV APP_ENV=production
 ENV PORT=1323
 ENV HOSTNAME=0.0.0.0
 ENV SSL_CERT_DIR=/etc/ssl/certs
-
-# Run as non-root user
-USER nonroot:nonroot
 
 # Expose ports
 EXPOSE 50051
