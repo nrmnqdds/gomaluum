@@ -10,7 +10,6 @@ import (
 )
 
 func (s *Server) UpdateAnalytics(matricNo string) error {
-
 	_, err := s.db.Exec(`
 			INSERT INTO analytics (matric_no)
 			VALUES (?)
@@ -31,6 +30,7 @@ func (s *Server) UpdateAnalytics(matricNo string) error {
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /api/analytics [get]
 func (s *Server) GetAnalyticsSummaryHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	rows, err := s.db.Query(`
 		SELECT level, batch, COUNT(*) as student_count
 		FROM analytics
