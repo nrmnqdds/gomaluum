@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.23.2-alpine AS build
+FROM golang:1.24.3-alpine AS build
 LABEL org.opencontainers.image.source="https://github.com/nrmnqdds/gomaluum" \
   org.opencontainers.image.description="Gomaluum API Server" \
   org.opencontainers.image.version="2.0" \
