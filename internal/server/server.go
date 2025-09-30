@@ -16,7 +16,6 @@ import (
 	"github.com/nrmnqdds/gomaluum/pkg/sf"
 
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
-	_ "golang.org/x/crypto/x509roots/fallback"
 )
 
 type Handlers interface {

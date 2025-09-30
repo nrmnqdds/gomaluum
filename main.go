@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/common-nighthawk/go-figure"
+	_ "golang.org/x/crypto/x509roots/fallback"
 )
 
 //go:embed docs/*
