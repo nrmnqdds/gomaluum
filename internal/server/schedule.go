@@ -87,13 +87,13 @@ func normalizeTime(timeStr string) (string, *int64) {
 
 	now := time.Now()
 
-	KLTimezone, err := time.LoadLocation("Asia/Kuala_Lumpur")
-	if err != nil {
-		fmt.Println("Error parsing time:", err)
-		return trimmed, nil
-	}
+	// KLTimezone, err := time.LoadLocation("Local")
+	// if err != nil {
+	// 	fmt.Println("Error parsing time:", err)
+	// 	return trimmed, nil
+	// }
 
-	t, err := time.ParseInLocation("2006-01-02 1504", fmt.Sprintf("%04d-%02d-%02d %s", now.Year(), now.Month(), now.Day(), trimmed), KLTimezone)
+	t, err := time.Parse("2006-01-02 1504", fmt.Sprintf("%04d-%02d-%02d %s", now.Year(), now.Month(), now.Day(), trimmed))
 	if err != nil {
 		fmt.Println("Error parsing time:", err)
 		return trimmed, nil
