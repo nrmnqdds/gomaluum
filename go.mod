@@ -25,6 +25,7 @@ require (
 	github.com/swaggo/swag v1.16.4
 	github.com/tursodatabase/libsql-client-go v0.0.0-20240902231107-85af5b9d094d
 	go.uber.org/zap v1.27.0
+	golang.org/x/crypto/x509roots/fallback v0.0.0-20250927194341-2beaa59a3c99
 	golang.org/x/sync v0.17.0
 	google.golang.org/grpc v1.69.2
 	google.golang.org/protobuf v1.36.0
