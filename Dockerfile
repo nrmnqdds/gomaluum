@@ -18,16 +18,23 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o /app/gomaluum
 
+FROM alpine:latest AS certs
+RUN apk --update add ca-certificates
+
 # Final stage
-FROM alpine:latest AS final
+FROM certs AS final
+RUN apk --update add ca-certificates
 
 # Copy binary from build stage
 COPY --from=build /app/gomaluum /
+
+COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Set environment variables
 ENV APP_ENV=production
 ENV PORT=1323
 ENV HOSTNAME=0.0.0.0
+ENV SSL_CERT_DIR=/etc/ssl/certs
 
 # Expose ports
 EXPOSE 50051
