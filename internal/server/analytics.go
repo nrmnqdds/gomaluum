@@ -53,8 +53,6 @@ ORDER BY level, batch;
 		var level string
 		var batch, count int
 
-		s.log.GetLogger().Sugar().Debugf("Scanning row for level: %s, batch: %d, count: %d", level, batch, count)
-
 		if err := rows.Scan(&level, &batch, &count); err != nil {
 			errors.Render(w, r, errors.ErrFailedToMapDBRows)
 			return
