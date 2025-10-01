@@ -32,10 +32,14 @@ func (s *Server) UpdateAnalytics(matricNo string) error {
 func (s *Server) GetAnalyticsSummaryHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	rows, err := s.db.Query(`
-		SELECT level, batch, COUNT(*) as student_count
-		FROM analytics
-		GROUP BY level, batch
-		ORDER BY level, batch
+	SELECT 
+    level, 
+    batch, 
+    COUNT(*) AS student_count
+FROM analytics
+WHERE level IS NOT NULL
+GROUP BY level, batch
+ORDER BY level, batch;
 	`)
 	if err != nil {
 		errors.Render(w, r, errors.ErrFailedToQueryDB)
@@ -48,6 +52,8 @@ func (s *Server) GetAnalyticsSummaryHandler(w http.ResponseWriter, r *http.Reque
 	for rows.Next() {
 		var level string
 		var batch, count int
+
+		s.log.GetLogger().Sugar().Debugf("Scanning row for level: %s, batch: %d, count: %d", level, batch, count)
 
 		if err := rows.Scan(&level, &batch, &count); err != nil {
 			errors.Render(w, r, errors.ErrFailedToMapDBRows)
