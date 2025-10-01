@@ -19,6 +19,7 @@ COPY . .
 RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -a -installsuffix cgo -o /app/gomaluum
 
 FROM alpine:latest AS final
+RUN apk add --update --no-cache ca-certificates curl
 
 # Copy binary from build stage
 COPY --from=build /app/gomaluum /
@@ -27,6 +28,7 @@ COPY --from=build /app/gomaluum /
 ENV APP_ENV=production
 ENV PORT=1323
 ENV HOSTNAME=0.0.0.0
+ENV SSL_CERT_DIR=/etc/ssl/certs
 
 # Expose ports
 EXPOSE 50051
