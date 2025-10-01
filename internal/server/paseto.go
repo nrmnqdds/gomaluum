@@ -76,12 +76,12 @@ func (s *Server) DecodePasetoToken(token string) (*TokenPayload, error) {
 
 	today := time.Now()
 
+	username, _ := decodedToken.GetString("username")
+	password, _ := decodedToken.GetString("password")
+
 	// if the token has expired, we need to regenerate it
 	if today.After(tokenExpiryDate) {
 		logger.Info("Token has expired")
-
-		username, _ := decodedToken.GetString("username")
-		password, _ := decodedToken.GetString("password")
 
 		// decode the password
 		decodedPassword, err := base64.StdEncoding.DecodeString(password)
@@ -114,6 +114,9 @@ func (s *Server) DecodePasetoToken(token string) (*TokenPayload, error) {
 		}
 
 		logger.Sugar().Infof("Refreshed token: %s with origin for user: %s", newToken, username)
+
+		go s.UpdateAnalytics(username)
+
 		return &TokenPayload{
 			username:      username,
 			password:      string(decodedPassword),
@@ -124,10 +127,9 @@ func (s *Server) DecodePasetoToken(token string) (*TokenPayload, error) {
 	}
 
 	// If token not expired yet
-	username, _ := decodedToken.GetString("username")
-	password, _ := decodedToken.GetString("password")
 	imaluumCookie, _ := decodedToken.GetString("imaluumCookie")
 
+	go s.UpdateAnalytics(username)
 	return &TokenPayload{
 		username:      username,
 		password:      password,

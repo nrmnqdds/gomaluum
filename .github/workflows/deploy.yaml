@@ -1,4 +1,4 @@
-name: Deploy Images to EC2
+name: Deploy Images to Digital Ocean
 on:
   push:
     branches:
@@ -42,11 +42,11 @@ jobs:
     steps:
       - name: 'Checkout GitHub Action'
         uses: actions/checkout@main
-      - name: 'Deploy to EC2'
-        uses: appleboy/ssh-action@v1.0.3
+      - name: 'Deploy to Digital Ocean'
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: ubuntu
+          username: root
           key: ${{ secrets.SSH_KEY }}
           script: |
             docker login ghcr.io -u nrmnqdds -p ${{ secrets.GHCR_TOKEN }}
