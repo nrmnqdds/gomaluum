@@ -1,0 +1,19 @@
+services:
+  gomaluum:
+    container_name: 'gomaluum-api'
+    image: 'ghcr.io/nrmnqdds/gomaluum:latest'
+    ports:
+      - '1323:1323'
+      - '50051:50051'
+    restart: 'unless-stopped'
+    environment:
+      - PORT=1323
+      - APP_ENV=production
+      - KV_NAMESPACE_ID=55a8855aeee344c496b0438125203d8b
+      - KV_USER_ID=f49efb0a9aebd7dbd27bfc2beb08401b
+      - CLOUDFLARE_API_TOKEN=909Bor6QQPGagQBXZppgg7VPHyg8v2yg-lLiZ3J0
+      - PASETO_SECRET_KEY=53a63160b31229a171fc89d88d709cfb9f3b96744b20a70cc4a7be4bb5dfddda54135f25160fa6309aca96c31d20ae986ecc72aeb14511cd48b8e68332bbb0b0
+      - PASETO_PUBLIC_KEY=54135f25160fa6309aca96c31d20ae986ecc72aeb14511cd48b8e68332bbb0b0
+      - DB_PATH=libsql://gomaluum-nrmnqdds.aws-ap-northeast-1.turso.io?authToken=eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NTkxNjEyNjMsImlkIjoiMGM5NmIyY2UtYzliZi00OWRiLWFjNjUtMzY5NjQ4ZjQyYmU3IiwicmlkIjoiMTA0YWI0YmItYjU0OS00M2E2LTkxNzktNGRmMTY5OTFkMTA0In0.jAn_NsnHTPbs3owAX_0azSzKCE6VSe87aw_A_-NRUvTLoODcCiTrdK2-Dge8JNKQGi4IwTxl6BtQUSbI2cSTBw
+    volumes:
+      - ./certificates:/etc/ssl/certs:ro
