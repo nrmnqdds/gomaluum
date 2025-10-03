@@ -408,6 +408,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		return utils.SortSessionNames(schedules[i].SessionName, schedules[j].SessionName)
 	})
 
+	logger.Sugar().Infof("Schedule response %v: ", schedules)
 	response := &dtos.ResponseDTO{
 		Message: "Successfully fetched schedule",
 		Data:    schedules,
