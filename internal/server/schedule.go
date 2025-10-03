@@ -413,7 +413,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Sugar().Errorf("Failed to marshal schedules: %v", err)
 	} else {
-		logger.Sugar().Infof("Schedule response: %v ", jsonData)
+		logger.Sugar().Infof("Schedule response: %v ", string(jsonData))
 	}
 
 	response := &dtos.ResponseDTO{
