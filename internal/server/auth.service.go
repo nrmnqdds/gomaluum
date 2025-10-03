@@ -125,6 +125,6 @@ func (s *GRPCServer) Login(_ context.Context, req *auth_proto.LoginRequest) (*au
 		}
 	}
 
-	log.Printf("Cookie MOD_AUTH_CAS not found in response: %v", cookies)
+	log.Printf("Login failed for user: %s", req.Username)
 	return nil, errors.ErrLoginFailed
 }
