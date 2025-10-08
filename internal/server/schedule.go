@@ -89,7 +89,7 @@ func normalizeTime(timeStr string) (string, *int64) {
 
 	now := time.Now()
 
-	KLTimezone, err := time.LoadLocation("Local")
+	KLTimezone, err := time.LoadLocation("Asia/Kuala_Lumpur")
 	if err != nil {
 		fmt.Println("Error parsing time:", err)
 		return trimmed, nil
