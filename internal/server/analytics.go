@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 	"sort"
+	"strings"
 
 	"github.com/bytedance/sonic"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
@@ -10,6 +11,13 @@ import (
 )
 
 func (s *Server) UpdateAnalytics(matricNo string) error {
+
+	// Edgecases for double degree student
+	// Remove leading "5" if present
+	if strings.HasPrefix("5", matricNo) {
+		matricNo = strings.TrimPrefix("5", matricNo)
+	}
+
 	_, err := s.db.Exec(`
 			INSERT INTO analytics (matric_no)
 			VALUES (?)
