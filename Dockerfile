@@ -19,7 +19,7 @@ COPY . .
 RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -a -installsuffix cgo -o /app/gomaluum
 
 FROM alpine:latest AS final
-RUN apk add --update --no-cache ca-certificates curl
+RUN apk add --update --no-cache ca-certificates curl tzdata
 
 # Copy binary from build stage
 COPY --from=build /app/gomaluum /
