@@ -241,10 +241,8 @@ func (s *Server) scheduleWorker(jobs <-chan scheduleJob, results chan<- schedule
 			c := colly.NewCollector()
 			c.WithTransport(s.httpClient.Transport)
 
-			var (
-				mu       sync.Mutex
-				subjects []dtos.ScheduleSubject
-			)
+			mu := sync.Mutex{}
+			subjects := []dtos.ScheduleSubject{}
 
 			c.OnRequest(func(r *colly.Request) {
 				r.Headers.Set("Cookie", cookieStr)
