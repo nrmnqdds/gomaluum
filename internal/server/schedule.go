@@ -408,14 +408,6 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		return utils.SortSessionNames(schedules[i].SessionName, schedules[j].SessionName)
 	})
 
-	// Print in pretty format for easier debugging
-	jsonData, err := sonic.ConfigFastest.MarshalIndent(schedules, "", "  ")
-	if err != nil {
-		logger.Sugar().Errorf("Failed to marshal schedules: %v", err)
-	} else {
-		logger.Sugar().Infof("Schedule response: %v ", string(jsonData))
-	}
-
 	response := &dtos.ResponseDTO{
 		Message: "Successfully fetched schedule",
 		Data:    schedules,
