@@ -12,6 +12,22 @@ definitions:
       message:
         type: string
     type: object
+  errors.CustomError:
+    properties:
+      message:
+        type: string
+      status:
+        type: integer
+    type: object
+  server.APIKeyResponse:
+    properties:
+      api_key:
+        type: string
+      created_at:
+        type: string
+      message:
+        type: string
+    type: object
 info:
   contact:
     email: ceo@nrmnqdds.com
@@ -38,6 +54,62 @@ paths:
             $ref: '#/definitions/dtos.ResponseDTO'
       tags:
       - scraper
+  /api/analytics:
+    get:
+      description: Get analytics summary grouped by level and batch
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ResponseDTO'
+      tags:
+      - analytics
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Logs in the user. Save the token and use it in the Authorization
+        header for future requests.
+      parameters:
+      - description: Login properties
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/auth_proto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ResponseDTO'
+      tags:
+      - auth
+  /api/auth/logout:
+    get:
+      consumes:
+      - application/json
+      description: Logs out the user. Clears the token from IIUM's CAS. PASETO token
+        is still valid.
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ResponseDTO'
+      tags:
+      - auth
   /api/download/exam-slip:
     get:
       description: Get exam slip PDF from i-Ma'luum
@@ -76,6 +148,25 @@ paths:
             type: string
       tags:
       - download
+  /api/key/generate:
+    post:
+      consumes:
+      - application/json
+      description: Generate a new API key for additional authentication layer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.APIKeyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.CustomError'
+      summary: Generate API Key
+      tags:
+      - key
   /api/profile:
     get:
       description: Get i-Ma'luum profile
@@ -152,50 +243,6 @@ paths:
             $ref: '#/definitions/dtos.ResponseDTO'
       tags:
       - scraper
-  /auth/login:
-    post:
-      consumes:
-      - application/json
-      description: Logs in the user. Save the token and use it in the Authorization
-        header for future requests.
-      parameters:
-      - description: Login properties
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/auth_proto.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dtos.ResponseDTO'
-      tags:
-      - auth
-  /auth/logout:
-    get:
-      consumes:
-      - application/json
-      description: Logs out the user. Clears the token from IIUM's CAS. PASETO token
-        is still valid.
-      parameters:
-      - default: Bearer <Add access token here>
-        description: Insert your access token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dtos.ResponseDTO'
-      tags:
-      - auth
   /health:
     get:
       description: Check the health of the application.

@@ -99,7 +99,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 200 {object} dtos.ResponseDTO
-// @Router /auth/logout [get]
+// @Router /api/auth/logout [get]
 func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
