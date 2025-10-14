@@ -47,6 +47,7 @@ func (s *Server) GetAnalyticsSummaryHandler(w http.ResponseWriter, r *http.Reque
 
 	// Check if database is available
 	if s.db == nil {
+		s.log.GetLogger().Sugar().Error("Database not available for analytics")
 		errors.Render(w, r, errors.ErrFailedToQueryDB)
 		return
 	}
@@ -62,8 +63,8 @@ GROUP BY level, batch
 ORDER BY level, batch;
 	`)
 	if err != nil {
-		errors.Render(w, r, errors.ErrFailedToQueryDB)
 		s.log.GetLogger().Sugar().Errorf("Failed to query db: %v", err)
+		errors.Render(w, r, errors.ErrFailedToQueryDB)
 		return
 	}
 	defer rows.Close()
