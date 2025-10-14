@@ -15,7 +15,7 @@ import (
 	"github.com/nrmnqdds/gomaluum/pkg/paseto"
 	"github.com/nrmnqdds/gomaluum/pkg/sf"
 
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
+	_ "github.com/lib/pq"
 )
 
 type Handlers interface {
@@ -68,32 +68,39 @@ func NewServer(port int, grpc *GRPCServer) *http.Server {
 		return nil
 	}
 
-	db, err := sql.Open("libsql", os.Getenv("DB_PATH"))
-	if err != nil {
-		log.Fatalf("Failed to create database connection: %v", err)
-		return nil
-	}
+	var db *sql.DB
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL != "" {
+		var err error
+		db, err = sql.Open("postgres", databaseURL)
+		if err != nil {
+			log.Printf("Failed to create database connection: %v", err)
+		} else {
+			schema := []string{
+				`CREATE TABLE IF NOT EXISTS analytics (
+					matric_no VARCHAR(10) NOT NULL PRIMARY KEY,
+					batch INTEGER GENERATED ALWAYS AS (CAST(SUBSTRING(matric_no, 1, 2) AS INTEGER) + 2000) STORED,
+					level VARCHAR(10) GENERATED ALWAYS AS (
+						CASE LENGTH(matric_no)
+							WHEN 7 THEN 'DEGREE'
+							WHEN 6 THEN 'CFS'
+						END
+					) STORED,
+					timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+				)`,
+				`CREATE INDEX IF NOT EXISTS idx_batch ON analytics(batch)`,
+				`CREATE INDEX IF NOT EXISTS idx_level ON analytics(level)`,
+				`CREATE INDEX IF NOT EXISTS idx_batch_level ON analytics(batch, level)`,
+			}
 
-	schema := []string{
-		`CREATE TABLE IF NOT EXISTS analytics (
-			matric_no TEXT NOT NULL PRIMARY KEY,
-			batch AS (substr(matric_no, 1, 2) + 2000) STORED,
-			level AS (
-				CASE length(matric_no)
-					WHEN 7 THEN 'DEGREE'
-					WHEN 6 THEN 'CFS'
-				END
-			) STORED,
-			timestamp DATETIME DEFAULT current_timestamp
-		)`,
-		`CREATE INDEX IF NOT EXISTS idx_batch ON analytics(batch)`,
-		`CREATE INDEX IF NOT EXISTS idx_level ON analytics(level)`,
-		`CREATE INDEX IF NOT EXISTS idx_batch_level ON analytics(batch, level)`,
-	}
-
-	for _, stmt := range schema {
-		if _, err := db.Exec(stmt); err != nil {
-			return nil
+			for _, stmt := range schema {
+				if _, err := db.Exec(stmt); err != nil {
+					log.Printf("Failed to create database schema: %v", err)
+					db.Close()
+					db = nil
+					break
+				}
+			}
 		}
 	}
 
@@ -107,6 +114,12 @@ func NewServer(port int, grpc *GRPCServer) *http.Server {
 		httpClient:   httpClient,
 		tokenManager: tm,
 		db:           db,
+	}
+
+	// Add cleanup for graceful shutdown
+	if db != nil {
+		// You can add a cleanup function or defer close if needed
+		// For now, the connection will be cleaned up when the process exits
 	}
 
 	// Declare Server config
@@ -149,4 +162,12 @@ func createHTTPClient() (*http.Client, error) {
 		Transport: transport,
 		Timeout:   30 * time.Second,
 	}, nil
+}
+
+// Close closes the database connection if it exists
+func (s *Server) Close() error {
+	if s.db != nil {
+		return s.db.Close()
+	}
+	return nil
 }

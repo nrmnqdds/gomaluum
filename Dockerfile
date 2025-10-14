@@ -7,8 +7,8 @@ LABEL org.opencontainers.image.source="https://github.com/nrmnqdds/gomaluum" \
 
 WORKDIR /app
 
-# for sqlite purpose
-RUN apk add --no-cache gcc musl-dev
+# Install build dependencies if needed
+RUN apk add --no-cache ca-certificates
 
 # Copy and download dependencies
 COPY go.mod go.sum ./

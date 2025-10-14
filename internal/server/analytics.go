@@ -11,6 +11,10 @@ import (
 )
 
 func (s *Server) UpdateAnalytics(matricNo string) error {
+	// Skip analytics if database is not available
+	if s.db == nil {
+		return nil
+	}
 
 	// Edgecases for double degree student
 	// Remove leading "5" if present
@@ -20,9 +24,9 @@ func (s *Server) UpdateAnalytics(matricNo string) error {
 
 	_, err := s.db.Exec(`
 			INSERT INTO analytics (matric_no)
-			VALUES (?)
+			VALUES ($1)
 			ON CONFLICT(matric_no)
-			DO UPDATE SET timestamp = current_timestamp
+			DO UPDATE SET timestamp = CURRENT_TIMESTAMP
 		`, matricNo)
 	if err != nil {
 		return err
@@ -39,6 +43,13 @@ func (s *Server) UpdateAnalytics(matricNo string) error {
 // @Router /api/analytics [get]
 func (s *Server) GetAnalyticsSummaryHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
+	// Check if database is available
+	if s.db == nil {
+		errors.Render(w, r, errors.ErrFailedToQueryDB)
+		return
+	}
+
 	rows, err := s.db.Query(`
 	SELECT
     level,

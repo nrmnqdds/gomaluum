@@ -18,12 +18,12 @@ require (
 	github.com/gocolly/colly/v2 v2.2.0
 	github.com/joho/godotenv v1.5.1
 	github.com/jwalton/gchalk v1.3.0
+	github.com/lib/pq v1.10.9
 	github.com/lucsky/cuid v1.2.1
 	github.com/mailru/easyjson v0.9.1
 	github.com/rung/go-safecast v1.0.1
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/swag v1.16.4
-	github.com/tursodatabase/libsql-client-go v0.0.0-20240902231107-85af5b9d094d
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto/x509roots/fallback v0.0.0-20251009181029-0b7aa0cfb07b
 	golang.org/x/sync v0.17.0
@@ -41,12 +41,10 @@ require (
 	github.com/antchfx/htmlquery v1.3.4 // indirect
 	github.com/antchfx/xmlquery v1.5.0 // indirect
 	github.com/antchfx/xpath v1.3.5 // indirect
-	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/bits-and-blooms/bitset v1.24.1 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
-	github.com/coder/websocket v1.8.14 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
@@ -70,7 +68,6 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.22.0 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
-	golang.org/x/exp v0.0.0-20251009144603-d2f985daa21b // indirect
 	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/term v0.36.0 // indirect

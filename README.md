@@ -1,13 +1,13 @@
 <img width="253" height="43" alt="gomaluum-v1" src="https://raw.githubusercontent.com/nrmnqdds/gomaluum/refs/heads/main/assets/gomaluum-logo-v2.png" />
 
-🚧 **In Construction** 🚧
--------------------------
+## 🚧 **In Construction** 🚧
 
-> [!IMPORTANT] 
+> [!IMPORTANT]
 > This project is **not** associated with the official i-Ma'luum!
 
 A proxy API which enables developers to build applications on top of i-Ma'luum.
 Primarily used by some IIUM's student-made app:
+
 - [Simplified i-Ma'luum](https://imaluum.quddus.my)
 - [ProReg](https://proreg.app)
 
@@ -20,11 +20,13 @@ GoMa'luum now supports an additional layer of authentication using API keys. Thi
 ### Quick Start with API Keys
 
 1. **Generate an API Key**:
+
    ```bash
    curl -X POST https://api.quddus.my/api/key/generate
    ```
 
 2. **Login with your API Key**:
+
    ```bash
    curl -X POST https://api.quddus.my/api/auth/login \
      -H "Content-Type: application/json" \
@@ -69,35 +71,37 @@ flowchart TD
 
 ## Local installation
 
-> Requires go >= 1.23
+### Prerequisites
 
-```
+- Go 1.23 or higher
+- PostgreSQL database (optional, for analytics functionality)
+
+### Setup
+
+```bash
 git clone http://github.com/nrmnqdds/gomaluum
 cd gomaluum
 go mod tidy
+
+# Run the application
 air
 ```
 
+For detailed database setup instructions (if you want analytics functionality), see [Database Configuration](docs/DATABASE.md).
+
 ## Using Docker
 
-```
-docker build -t gomaluum .
-docker run -p 1323:1323 -d gomaluum
-```
-
-## Testing the API Key System
-
-Run the demo script to test the new API key functionality:
-
 ```bash
-# Make sure the server is running first
-go run main.go
+docker build -t gomaluum .
+# Without database (no analytics)
+docker run -p 1323:1323 -d gomaluum
 
-# In another terminal, run the demo
-./scripts/demo_apikey.sh
+# With database (analytics enabled)
+docker run -p 1323:1323 -e DATABASE_URL=postgresql://user:pass@host:5432/db -d gomaluum
 ```
+
+For a complete Docker Compose setup with PostgreSQL, see [Database Configuration](docs/DATABASE.md).
 
 ## Support this project!
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/nrmnqdds)
-
