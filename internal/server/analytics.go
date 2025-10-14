@@ -29,6 +29,7 @@ func (s *Server) UpdateAnalytics(matricNo string) error {
 			DO UPDATE SET timestamp = CURRENT_TIMESTAMP
 		`, matricNo)
 	if err != nil {
+		s.log.GetLogger().Sugar().Errorf("Failed to update analytics for %s: %v", matricNo, err)
 		return err
 	}
 
@@ -62,6 +63,7 @@ ORDER BY level, batch;
 	`)
 	if err != nil {
 		errors.Render(w, r, errors.ErrFailedToQueryDB)
+		s.log.GetLogger().Sugar().Errorf("Failed to query db: %v", err)
 		return
 	}
 	defer rows.Close()
@@ -73,6 +75,7 @@ ORDER BY level, batch;
 		var batch, count int
 
 		if err := rows.Scan(&level, &batch, &count); err != nil {
+			s.log.GetLogger().Sugar().Errorf("Failed to map db rows: %v", err)
 			errors.Render(w, r, errors.ErrFailedToMapDBRows)
 			return
 		}
