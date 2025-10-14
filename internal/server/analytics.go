@@ -14,8 +14,8 @@ func (s *Server) UpdateAnalytics(matricNo string) error {
 
 	// Edgecases for double degree student
 	// Remove leading "5" if present
-	if strings.HasPrefix("5", matricNo) {
-		matricNo = strings.TrimPrefix("5", matricNo)
+	if after, ok := strings.CutPrefix("5", matricNo); ok {
+		matricNo = after
 	}
 
 	_, err := s.db.Exec(`
@@ -40,9 +40,9 @@ func (s *Server) UpdateAnalytics(matricNo string) error {
 func (s *Server) GetAnalyticsSummaryHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	rows, err := s.db.Query(`
-	SELECT 
-    level, 
-    batch, 
+	SELECT
+    level,
+    batch,
     COUNT(*) AS student_count
 FROM analytics
 WHERE level IS NOT NULL

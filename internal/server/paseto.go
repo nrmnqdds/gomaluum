@@ -9,12 +9,14 @@ import (
 
 	"aidanwoods.dev/go-paseto"
 	pb "github.com/nrmnqdds/gomaluum/internal/proto"
+	"github.com/nrmnqdds/gomaluum/pkg/apikey"
 )
 
 type TokenPayload struct {
 	username      string
 	password      string
 	imaluumCookie string
+	apiKey        string
 }
 
 // GeneratePasetoToken generates a PASETO token for the given original uia cookie
@@ -22,6 +24,7 @@ type TokenPayload struct {
 // username: the username of the user
 // password: the password of the user in base64
 func (s *Server) GeneratePasetoToken(payload TokenPayload) (string, string, error) {
+	logger := s.log.GetLogger()
 	token := s.paseto.Token
 
 	token.SetIssuedAt(time.Now())
@@ -34,14 +37,34 @@ func (s *Server) GeneratePasetoToken(payload TokenPayload) (string, string, erro
 	originPassword := payload.password
 	imaluumCookie := payload.imaluumCookie
 	username := payload.username
+	userAPIKey := payload.apiKey
 
 	// encode the base64 password
 	password := []byte(originPassword)
 	base64Password := base64.StdEncoding.EncodeToString(password)
 
-	token.SetString("imaluumCookie", imaluumCookie)
-	token.SetString("username", username)
-	token.SetString("password", base64Password)
+	// Encrypt sensitive data with API key before storing in PASETO
+	encryptedCookie, err := apikey.EncryptWithAPIKey(imaluumCookie, userAPIKey)
+	if err != nil {
+		logger.Sugar().Errorf("Failed to encrypt cookie with API key: %v", err)
+		return "", "", err
+	}
+
+	encryptedUsername, err := apikey.EncryptWithAPIKey(username, userAPIKey)
+	if err != nil {
+		logger.Sugar().Errorf("Failed to encrypt username with API key: %v", err)
+		return "", "", err
+	}
+
+	encryptedPassword, err := apikey.EncryptWithAPIKey(base64Password, userAPIKey)
+	if err != nil {
+		logger.Sugar().Errorf("Failed to encrypt password with API key: %v", err)
+		return "", "", err
+	}
+
+	token.SetString("imaluumCookie", encryptedCookie)
+	token.SetString("username", encryptedUsername)
+	token.SetString("password", encryptedPassword)
 
 	signed := token.V4Sign(*s.paseto.PrivateKey, nil)
 
@@ -51,7 +74,7 @@ func (s *Server) GeneratePasetoToken(payload TokenPayload) (string, string, erro
 }
 
 // DecodePasetoToken decodes the given PASETO token and returns the original uia cookie
-func (s *Server) DecodePasetoToken(token string) (*TokenPayload, error) {
+func (s *Server) DecodePasetoToken(token, userAPIKey string) (*TokenPayload, error) {
 	parser := paseto.NewParserWithoutExpiryCheck() // Don't use NewParser() which will checks expiry by default
 	logger := s.log.GetLogger()
 
@@ -76,8 +99,22 @@ func (s *Server) DecodePasetoToken(token string) (*TokenPayload, error) {
 
 	today := time.Now()
 
-	username, _ := decodedToken.GetString("username")
-	password, _ := decodedToken.GetString("password")
+	// Get encrypted data from token
+	encryptedUsername, _ := decodedToken.GetString("username")
+	encryptedPassword, _ := decodedToken.GetString("password")
+
+	// Decrypt data using API key
+	username, err := apikey.DecryptWithAPIKey(encryptedUsername, userAPIKey)
+	if err != nil {
+		logger.Sugar().Errorf("Failed to decrypt username with API key: %v", err)
+		return nil, err
+	}
+
+	password, err := apikey.DecryptWithAPIKey(encryptedPassword, userAPIKey)
+	if err != nil {
+		logger.Sugar().Errorf("Failed to decrypt password with API key: %v", err)
+		return nil, err
+	}
 
 	// if the token has expired, we need to regenerate it
 	if today.After(tokenExpiryDate) {
@@ -121,18 +158,25 @@ func (s *Server) DecodePasetoToken(token string) (*TokenPayload, error) {
 			username:      username,
 			password:      string(decodedPassword),
 			imaluumCookie: newToken,
+			apiKey:        userAPIKey,
 		}, nil
 
 		// End of if token expired
 	}
 
-	// If token not expired yet
-	imaluumCookie, _ := decodedToken.GetString("imaluumCookie")
+	// If token not expired yet - decrypt the cookie
+	encryptedCookie, _ := decodedToken.GetString("imaluumCookie")
+	imaluumCookie, err := apikey.DecryptWithAPIKey(encryptedCookie, userAPIKey)
+	if err != nil {
+		logger.Sugar().Errorf("Failed to decrypt cookie with API key: %v", err)
+		return nil, err
+	}
 
 	go s.UpdateAnalytics(username)
 	return &TokenPayload{
 		username:      username,
 		password:      password,
 		imaluumCookie: imaluumCookie,
+		apiKey:        userAPIKey,
 	}, nil
 }

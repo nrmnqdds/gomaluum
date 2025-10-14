@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/nrmnqdds/gomaluum/pkg/apikey"
 )
 
 type originCookie int
@@ -19,8 +21,8 @@ func (s *Server) PasetoAuthenticator() func(http.Handler) http.Handler {
 			fullAuthHeader := r.Header.Get("Authorization")
 			path := r.URL.Path
 
-			// Skip authentication for login route
-			if path == "/api/login" {
+			// Skip authentication for login routes and API key generation
+			if path == "/api/login" || path == "/api/auth/login" || path == "/api/key/generate" {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -33,7 +35,21 @@ func (s *Server) PasetoAuthenticator() func(http.Handler) http.Handler {
 
 			authHeader := fullAuthHeader[7:]
 
-			token, err := s.DecodePasetoToken(authHeader)
+			// Get API key from header
+			userAPIKey := r.Header.Get("x-gomaluum-key")
+			if userAPIKey == "" {
+				logger.Sugar().Debug("No API key provided, using default key")
+				userAPIKey = apikey.DefaultAPIKey
+			} else {
+				// Validate the provided API key format
+				if !apikey.ValidateAPIKey(userAPIKey) {
+					logger.Sugar().Warn("Invalid API key format")
+					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+					return
+				}
+			}
+
+			token, err := s.DecodePasetoToken(authHeader, userAPIKey)
 			if err != nil {
 				logger.Sugar().Errorf("Failed to decode token: %v", err)
 

@@ -13,8 +13,42 @@ Primarily used by some IIUM's student-made app:
 
 Swagger API documentation is available at [here](https://api.quddus.my/api/reference).
 
-How it works under the hood
-------------------------------------------
+## 🔐 Enhanced Security with API Keys
+
+GoMa'luum now supports an additional layer of authentication using API keys. This provides enhanced security by encrypting your data with a unique key before PASETO token encryption.
+
+### Quick Start with API Keys
+
+1. **Generate an API Key**:
+   ```bash
+   curl -X POST https://api.quddus.my/api/key/generate
+   ```
+
+2. **Login with your API Key**:
+   ```bash
+   curl -X POST https://api.quddus.my/api/auth/login \
+     -H "Content-Type: application/json" \
+     -H "x-gomaluum-key: YOUR_API_KEY" \
+     -d '{"username": "your_username", "password": "your_password"}'
+   ```
+
+3. **Use the API Key in all requests**:
+   ```bash
+   curl -X GET https://api.quddus.my/api/profile \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "x-gomaluum-key: YOUR_API_KEY"
+   ```
+
+### Security Benefits
+
+- **Double Encryption**: Data is encrypted with your API key, then with PASETO
+- **Key-Specific Access**: Tokens can only be used with the same API key
+- **Backward Compatible**: Works without API keys using a default key
+- **Enhanced Privacy**: Each application can have its own unique encryption layer
+
+For detailed documentation, see [API Key Usage Guide](docs/API_KEY_USAGE.md).
+
+## How it works under the hood
 
 ```mermaid
 flowchart TD
@@ -33,8 +67,7 @@ flowchart TD
     B --> N["gRPC support for internal/external service communication"]
 ```
 
-Local installation
-------------------
+## Local installation
 
 > Requires go >= 1.23
 
@@ -45,15 +78,26 @@ go mod tidy
 air
 ```
 
-Using Docker
-------------
+## Using Docker
 
 ```
 docker build -t gomaluum .
 docker run -p 1323:1323 -d gomaluum
 ```
 
-Support this project!
+## Testing the API Key System
+
+Run the demo script to test the new API key functionality:
+
+```bash
+# Make sure the server is running first
+go run main.go
+
+# In another terminal, run the demo
+./scripts/demo_apikey.sh
+```
+
+## Support this project!
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/nrmnqdds)
 

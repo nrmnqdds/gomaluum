@@ -12,6 +12,7 @@ import (
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
 	pb "github.com/nrmnqdds/gomaluum/internal/proto"
+	"github.com/nrmnqdds/gomaluum/pkg/apikey"
 )
 
 // @Title LoginHandler
@@ -46,10 +47,25 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get API key from header
+	userAPIKey := r.Header.Get("x-gomaluum-key")
+	if userAPIKey == "" {
+		logger.Sugar().Debug("No API key provided in login, using default key")
+		userAPIKey = apikey.DefaultAPIKey
+	} else {
+		// Validate the provided API key format
+		if !apikey.ValidateAPIKey(userAPIKey) {
+			logger.Sugar().Warn("Invalid API key format provided in login")
+			errors.Render(w, r, errors.ErrInvalidAPIKey)
+			return
+		}
+	}
+
 	payload := TokenPayload{
 		username:      resp.Username,
 		password:      resp.Password,
 		imaluumCookie: resp.Token,
+		apiKey:        userAPIKey,
 	}
 
 	// Generate a new PASETO token

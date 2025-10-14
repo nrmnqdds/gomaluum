@@ -18,7 +18,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "x-gomaluum-key"},
 		AllowCredentials: true,
 		// MaxAge:           300,
 	}))
@@ -53,6 +53,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 				r.Use(s.PasetoAuthenticator())
 				r.Get("/logout", s.LogoutHandler)
 			})
+		})
+
+		// API Key routes
+		r.Route("/key", func(r chi.Router) {
+			r.Post("/generate", s.GenerateAPIKeyHandler)
 		})
 
 		r.Get("/ads", s.AdsHandler)
