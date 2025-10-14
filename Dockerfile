@@ -8,7 +8,7 @@ LABEL org.opencontainers.image.source="https://github.com/nrmnqdds/gomaluum" \
 WORKDIR /app
 
 # Install build dependencies if needed
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates gcc musl-dev
 
 # Copy and download dependencies
 COPY go.mod go.sum ./
