@@ -29,13 +29,13 @@ COPY --from=build /app/gomaluum /
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=certs /usr/bin/curl /usr/bin/curl
 COPY --from=certs /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=certs /etc/localtime /etc/localtime
 
 # Set environment variables
 ENV APP_ENV=production
 ENV PORT=1323
 ENV HOSTNAME=0.0.0.0
 ENV SSL_CERT_DIR=/etc/ssl/certs
+ENV TZ=Asia/Kuala_Lumpur
 
 # Run as non-root user
 USER nonroot:nonroot
