@@ -1,0 +1,3 @@
+[submodule "docs/web"]
+	path = docs/web
+	url = https://github.com/nrmnqdds/gomaluum-docs.git
