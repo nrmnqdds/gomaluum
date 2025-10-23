@@ -41,7 +41,6 @@ ENV TZ=Asia/Kuala_Lumpur
 USER nonroot:nonroot
 
 # Expose ports
-EXPOSE 50051
 EXPOSE 1323
 
 # Health check

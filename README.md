@@ -83,6 +83,11 @@ git clone http://github.com/nrmnqdds/gomaluum
 cd gomaluum
 go mod tidy
 
+# Copy .env.example to .env and configure
+cp .env.example .env
+# Edit .env and set GRPC_SERVICE_URL to your external gRPC service
+# Example: GRPC_SERVICE_URL=localhost:50051 or your-service.com:443
+
 # Run the application
 air
 ```
@@ -94,11 +99,16 @@ For detailed database setup instructions (if you want analytics functionality), 
 ```bash
 docker build -t gomaluum .
 # Without database (no analytics)
-docker run -p 1323:1323 -d gomaluum
+docker run -p 1323:1323 -e GRPC_SERVICE_URL=your-grpc-service:50051 -d gomaluum
 
 # With database (analytics enabled)
-docker run -p 1323:1323 -e DATABASE_URL=postgresql://user:pass@host:5432/db -d gomaluum
+docker run -p 1323:1323 \
+  -e GRPC_SERVICE_URL=your-grpc-service:50051 \
+  -e DATABASE_URL=postgresql://user:pass@host:5432/db \
+  -d gomaluum
 ```
+
+> **Note**: The `GRPC_SERVICE_URL` environment variable is required and must point to your external gRPC authentication service.
 
 For a complete Docker Compose setup with PostgreSQL, see [Database Configuration](docs/DATABASE.md).
 

@@ -131,7 +131,7 @@ func (s *Server) DecodePasetoToken(token, userAPIKey string) (*TokenPayload, err
 			// regenerate the token
 			logger.Sugar().Infof("Refreshing session token with username: %s, password: %s", username, string(decodedPassword))
 
-			resp, err := s.grpc.Login(ctx, &pb.LoginRequest{
+			resp, err := s.grpc.client.Login(ctx, &pb.LoginRequest{
 				Username: username,
 				Password: string(decodedPassword),
 			})

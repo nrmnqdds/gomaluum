@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,10 +15,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	auth_proto "github.com/nrmnqdds/gomaluum/internal/proto"
 	"github.com/nrmnqdds/gomaluum/internal/server"
-	"github.com/nrmnqdds/gomaluum/pkg/utils"
-	"google.golang.org/grpc"
 
 	"github.com/jwalton/gchalk"
 	_ "golang.org/x/crypto/x509roots/fallback"
@@ -85,7 +81,7 @@ func initTracer() func(context.Context) error {
 	return exporter.Shutdown
 }
 
-func gracefulShutdown(apiServer *http.Server, grpcServer *grpc.Server, done chan bool) {
+func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -103,9 +99,6 @@ func gracefulShutdown(apiServer *http.Server, grpcServer *grpc.Server, done chan
 	if err := apiServer.Shutdown(ctx); err != nil {
 		log.Printf("HTTP Server forced to shutdown with error: %v", err)
 	}
-
-	// Gracefully stop the gRPC server
-	grpcServer.GracefulStop()
 
 	log.Println("Server exiting")
 
@@ -155,10 +148,18 @@ func main() {
 	cleanup := initTracer()
 	defer cleanup(context.Background())
 
-	// Initialize gRPC server
-	grpcServer := grpc.NewServer()
-	grpcService := server.NewGRPCServer()
-	auth_proto.RegisterAuthServer(grpcServer, grpcService)
+	// Get gRPC service URL from environment
+	grpcServiceURL := os.Getenv("GRPC_SERVICE_URL")
+	if grpcServiceURL == "" {
+		log.Fatal("GRPC_SERVICE_URL environment variable is required")
+	}
+
+	// Initialize gRPC client connection to external service
+	grpcClient, err := server.NewGRPCClient(grpcServiceURL)
+	if err != nil {
+		log.Fatalf("failed to connect to gRPC service: %v", err)
+	}
+	defer grpcClient.Close()
 
 	port, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
@@ -166,11 +167,10 @@ func main() {
 	}
 
 	server.DocsPath = DocsPath
-	httpServer := server.NewServer(port, grpcService)
+	httpServer := server.NewServer(port, grpcClient)
 
-	// Create channels to track when both servers are running
+	// Create channels to track server status
 	done := make(chan bool, 1)
-	grpcReady := make(chan bool, 1)
 	httpReady := make(chan bool, 1)
 
 	// myFigure := figure.NewFigure("GoMaluum Rest API", "", true)
@@ -187,20 +187,7 @@ func main() {
 		`))
 
 	fmt.Println(gchalk.Yellow("====================================================="))
-
-	// Start gRPC server in a goroutine
-	go func() {
-		defer utils.CatchPanic("gRPC server")
-		lis, err := net.Listen("tcp", "0.0.0.0:50051")
-		if err != nil {
-			log.Fatalf("failed to listen: %v", err)
-		}
-		fmt.Println(gchalk.Blue("gRPC server listening on :50051"))
-		grpcReady <- true
-		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("failed to serve gRPC: %v", err)
-		}
-	}()
+	fmt.Println(gchalk.Green(fmt.Sprintf("Connected to gRPC service at %s", grpcServiceURL)))
 
 	// Start HTTP server
 	go func() {
@@ -211,15 +198,14 @@ func main() {
 		}
 	}()
 
-	// Wait for both servers to be ready and print final separator
+	// Wait for HTTP server to be ready and print final separator
 	go func() {
-		<-grpcReady
 		<-httpReady
 		fmt.Println(gchalk.Yellow("====================================================="))
 	}()
 
 	// Run graceful shutdown in a separate goroutine
-	go gracefulShutdown(httpServer, grpcServer, done)
+	go gracefulShutdown(httpServer, done)
 
 	// Wait for the graceful shutdown to complete
 	<-done
