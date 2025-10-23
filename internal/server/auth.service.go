@@ -106,14 +106,6 @@ func (s *GRPCServer) Login(_ context.Context, req *auth_proto.LoginRequest) (*au
 	for _, cookie := range cookies {
 		if cookie.Name == "MOD_AUTH_CAS" {
 
-			// Save the username and password to KV for caching purpose
-			// Use goroutine to avoid blocking the main thread
-			// go func() {
-			// 	if err := SaveToKV(ctx, req.Username, req.Password); err != nil {
-			// 		log.Printf("Failed to save to KV: %v", err)
-			// 	}
-			// }()
-
 			resp := &auth_proto.LoginResponse{
 				Token:    cookie.Value,
 				Username: req.Username,

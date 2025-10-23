@@ -34,15 +34,7 @@ func New() *AppLogger {
 		log.WithProcessor(processor),
 	)
 
-	defer func() {
-		err := provider.Shutdown(context.Background())
-		if err != nil {
-			fmt.Println(err)
-		}
-	}()
-
 	logger := zap.New(otelzap.NewCore("gomaluum-logs", otelzap.WithLoggerProvider(provider)))
-	defer logger.Sync()
 
 	return &AppLogger{
 		Logger: logger,
