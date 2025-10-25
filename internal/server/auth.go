@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -39,11 +40,14 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Call the Login method from the GRPC server
-	resp, err := s.grpc.Login(ctx, user)
+	// Call the Login method from the external GRPC service
+	resp, err := s.grpc.client.Login(ctx, user)
 	if err != nil {
 		logger.Sugar().Errorf("Login failed: %v", err)
-		errors.Render(w, r, err)
+		fmt.Println("Login failed:", err)
+		fmt.Println("Login failed resp:", resp)
+		// errors.Render(w, r, err)
+		errors.Render(w, r, errors.ErrLoginFailed)
 		return
 	}
 

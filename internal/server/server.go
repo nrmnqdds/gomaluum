@@ -14,6 +14,8 @@ import (
 	"github.com/nrmnqdds/gomaluum/pkg/logger"
 	"github.com/nrmnqdds/gomaluum/pkg/paseto"
 	"github.com/nrmnqdds/gomaluum/pkg/sf"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	_ "github.com/lib/pq"
 )
@@ -26,35 +28,44 @@ type Handlers interface {
 	ResultHandler(w http.ResponseWriter, r *http.Request)
 }
 
-type GRPCServer struct {
-	auth_proto.UnimplementedAuthServer
-	httpClient *http.Client
+type GRPCClient struct {
+	conn   *grpc.ClientConn
+	client auth_proto.AuthClient
 }
 
-func NewGRPCServer() *GRPCServer {
-	// Create the HTTP client with proper certificate handling
-	httpClient, err := createHTTPClient()
+func NewGRPCClient(serviceURL string) (*GRPCClient, error) {
+	// Connect to the external gRPC service
+	conn, err := grpc.Dial(serviceURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("Failed to create HTTP client: %v", err)
-		return nil
+		return nil, fmt.Errorf("failed to connect to gRPC service at %s: %w", serviceURL, err)
 	}
 
-	return &GRPCServer{
-		httpClient: httpClient,
+	client := auth_proto.NewAuthClient(conn)
+
+	return &GRPCClient{
+		conn:   conn,
+		client: client,
+	}, nil
+}
+
+func (c *GRPCClient) Close() error {
+	if c.conn != nil {
+		return c.conn.Close()
 	}
+	return nil
 }
 
 type Server struct {
 	log          *logger.AppLogger
 	paseto       *paseto.AppPaseto
-	grpc         *GRPCServer
+	grpc         *GRPCClient
 	httpClient   *http.Client
 	port         int
 	tokenManager *sf.TokenManager
 	db           *sql.DB
 }
 
-func NewServer(port int, grpc *GRPCServer) *http.Server {
+func NewServer(port int, grpc *GRPCClient) *http.Server {
 	paseto, err := paseto.New()
 	if err != nil {
 		log.Fatalf("Failed to create paseto: %v", err)
@@ -164,10 +175,20 @@ func createHTTPClient() (*http.Client, error) {
 	}, nil
 }
 
-// Close closes the database connection if it exists
+// Close closes the database connection and gRPC client connection if they exist
 func (s *Server) Close() error {
+	var dbErr, grpcErr error
+
 	if s.db != nil {
-		return s.db.Close()
+		dbErr = s.db.Close()
 	}
-	return nil
+
+	if s.grpc != nil {
+		grpcErr = s.grpc.Close()
+	}
+
+	if dbErr != nil {
+		return dbErr
+	}
+	return grpcErr
 }

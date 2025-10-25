@@ -28,11 +28,11 @@ func (s *Server) HealthHandler() http.HandlerFunc {
 
 		// A check configuration to see if our database connection is up.
 		// The check function will be executed for each HTTP request.
-		// health.WithCheck(health.Check{
-		// 	Name:    "database",      // A unique check name.
-		// 	Timeout: 2 * time.Second, // A check specific timeout.
-		// 	Check:   db.PingContext,
-		// }),
+		health.WithCheck(health.Check{
+			Name:    "database",      // A unique check name.
+			Timeout: 2 * time.Second, // A check specific timeout.
+			Check:   s.db.PingContext,
+		}),
 
 		// The following check will be executed periodically every 15 seconds
 		// started with an initial delay of 3 seconds. The check function will NOT
