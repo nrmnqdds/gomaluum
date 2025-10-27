@@ -1,14 +1,8 @@
 package logger
 
 import (
-	"context"
-	"fmt"
-	"os"
-
-	"go.opentelemetry.io/contrib/bridges/otelzap"
-	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
-	"go.opentelemetry.io/otel/sdk/log"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type AppLogger struct {
@@ -16,25 +10,10 @@ type AppLogger struct {
 }
 
 func New() *AppLogger {
+	config := zap.NewDevelopmentConfig()
+	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 
-	otlpEndpoint := os.Getenv("OTLP_LOG_ENDPOINT")
-
-	ctx := context.Background()
-	exporter, err := otlploghttp.New(ctx,
-		otlploghttp.WithEndpoint(otlpEndpoint),
-		otlploghttp.WithInsecure(),
-	)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	processor := log.NewBatchProcessor(exporter)
-
-	provider := log.NewLoggerProvider(
-		log.WithProcessor(processor),
-	)
-
-	logger := zap.New(otelzap.NewCore("gomaluum-logs", otelzap.WithLoggerProvider(provider)))
+	logger, _ := config.Build()
 
 	return &AppLogger{
 		Logger: logger,

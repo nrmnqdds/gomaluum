@@ -7,7 +7,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/riandyrn/otelchi"
 )
 
 var DocsPath embed.FS
@@ -26,7 +25,6 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// Recoverer middleware recovers from panics, logs the panic (and a backtrace), and returns a HTTP 500 (Internal Server Error) status if possible.
 	r.Use(middleware.Recoverer)
-	r.Use(otelchi.Middleware("gomaluum-server", otelchi.WithChiRoutes(r)))
 
 	// RedirectSlashes middleware is a simple middleware that will match request paths with a trailing slash, strip it, and redirect.
 	r.Use(middleware.RedirectSlashes)
