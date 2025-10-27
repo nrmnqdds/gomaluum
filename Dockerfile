@@ -38,6 +38,7 @@ ENV SSL_CERT_DIR=/etc/ssl/certs
 ENV TZ=Asia/Kuala_Lumpur
 
 # aesthetic purposes
+ENV TERM xterm-256color
 ENV FORCE_COLOR=1
 
 # Run as non-root user
