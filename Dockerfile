@@ -37,6 +37,9 @@ ENV HOSTNAME=0.0.0.0
 ENV SSL_CERT_DIR=/etc/ssl/certs
 ENV TZ=Asia/Kuala_Lumpur
 
+# aesthetic purposes
+ENV FORCE_COLOR=1
+
 # Run as non-root user
 USER nonroot:nonroot
 
