@@ -20,6 +20,7 @@ type APIKeyResponse struct {
 // @Tags key
 // @Accept json
 // @Produce json
+// @Param x-gomaluum-key header string false "API key for additional security layer"
 // @Success 200 {object} APIKeyResponse
 // @Failure 500 {object} errors.CustomError
 // @Router /api/key/generate [post]

@@ -25,6 +25,14 @@
                 "tags": [
                     "scraper"
                 ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key for additional security layer",
+                        "name": "x-gomaluum-key",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -43,6 +51,14 @@
                 ],
                 "tags": [
                     "analytics"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key for additional security layer",
+                        "name": "x-gomaluum-key",
+                        "in": "header"
+                    }
                 ],
                 "responses": {
                     "200": {
@@ -67,6 +83,12 @@
                     "auth"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key for additional security layer",
+                        "name": "x-gomaluum-key",
+                        "in": "header"
+                    },
                     {
                         "description": "Login properties",
                         "name": "body",
@@ -102,6 +124,12 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "API key for additional security layer",
+                        "name": "x-gomaluum-key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "default": "Bearer \u003cAdd access token here\u003e",
                         "description": "Insert your access token",
                         "name": "Authorization",
@@ -131,6 +159,12 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "API key for additional security layer",
+                        "name": "x-gomaluum-key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "default": "Bearer \u003cAdd access token here\u003e",
                         "description": "Insert your access token",
                         "name": "Authorization",
@@ -158,6 +192,12 @@
                     "download"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key for additional security layer",
+                        "name": "x-gomaluum-key",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "default": "Bearer \u003cAdd access token here\u003e",
@@ -190,6 +230,14 @@
                     "key"
                 ],
                 "summary": "Generate API Key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key for additional security layer",
+                        "name": "x-gomaluum-key",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -216,6 +264,12 @@
                     "scraper"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key for additional security layer",
+                        "name": "x-gomaluum-key",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "default": "Bearer \u003cAdd access token here\u003e",
@@ -247,6 +301,12 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "API key for additional security layer",
+                        "name": "x-gomaluum-key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "default": "Bearer \u003cAdd access token here\u003e",
                         "description": "Insert your access token",
                         "name": "Authorization",
@@ -276,6 +336,12 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "API key for additional security layer",
+                        "name": "x-gomaluum-key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "default": "Bearer \u003cAdd access token here\u003e",
                         "description": "Insert your access token",
                         "name": "Authorization",
@@ -303,6 +369,12 @@
                     "scraper"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key for additional security layer",
+                        "name": "x-gomaluum-key",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "default": "Bearer \u003cAdd access token here\u003e",

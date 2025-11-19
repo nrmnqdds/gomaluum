@@ -21,6 +21,7 @@ import (
 // @Tags auth
 // @Accept json
 // @Produce json
+// @Param x-gomaluum-key header string false "API key for additional security layer"
 // @Param body body pb.LoginRequest true "Login properties"
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /api/auth/login [post]
@@ -101,6 +102,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags auth
 // @Accept json
 // @Produce json
+// @Param x-gomaluum-key header string false "API key for additional security layer"
 // @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /api/auth/logout [get]

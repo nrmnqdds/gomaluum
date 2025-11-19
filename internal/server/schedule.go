@@ -337,6 +337,7 @@ func (s *Server) processSchedulesWithWorkerPool(queries, names []string, cookie 
 // @Description Get schedule from i-Ma'luum
 // @Tags scraper
 // @Produce json
+// @Param x-gomaluum-key header string false "API key for additional security layer"
 // @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /api/schedule [get]

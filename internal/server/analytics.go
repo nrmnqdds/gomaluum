@@ -40,6 +40,7 @@ func (s *Server) UpdateAnalytics(matricNo string) error {
 // @Description Get analytics summary grouped by level and batch
 // @Tags analytics
 // @Produce json
+// @Param x-gomaluum-key header string false "API key for additional security layer"
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /api/analytics [get]
 func (s *Server) GetAnalyticsSummaryHandler(w http.ResponseWriter, r *http.Request) {
