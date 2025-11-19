@@ -13,6 +13,7 @@ import (
 // @Description Get exam slip PDF from i-Ma'luum
 // @Tags download
 // @Produce application/pdf
+// @Param x-gomaluum-key header string false "API key for additional security layer"
 // @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 200 {string} string "Exam slip PDF"
 // @Router /api/download/exam-slip [get]
@@ -57,6 +58,7 @@ func (s *Server) ExamSlipHandler(w http.ResponseWriter, r *http.Request) {
 // @Description Get study plan PDF from i-Ma'luum
 // @Tags download
 // @Produce application/pdf
+// @Param x-gomaluum-key header string false "API key for additional security layer"
 // @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 200 {string} string "Exam slip PDF"
 // @Router /api/download/study-plan [get]

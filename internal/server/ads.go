@@ -15,6 +15,7 @@ import (
 // @Description Get i-Ma'luum ads
 // @Tags scraper
 // @Produce json
+// @Param x-gomaluum-key header string false "API key for additional security layer"
 // @Success 200 {object} dtos.ResponseDTO
 // @Router /api/ads [get]
 func (s *Server) AdsHandler(w http.ResponseWriter, r *http.Request) {
