@@ -11,7 +11,7 @@ type StarpointProgram struct {
 	ID        string  `json:"id"`
 	Session   string  `json:"session"`
 	EventName string  `json:"event_name"`
-	Type      string  `json:"type"`
+	Type      *string `json:"type"`
 	Level     string  `json:"level"`
 	Points    float32 `json:"points"`
 }

@@ -59,7 +59,12 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 		// Full row with semester and session
 		program.Session = trimmedTds[1]
 		program.EventName = trimmedTds[2]
-		program.Type = trimmedTds[3]
+		if trimmedTds[3] != "" {
+			typeVal := trimmedTds[3]
+			program.Type = &typeVal
+		} else {
+			program.Type = nil
+		}
 		program.Level = trimmedTds[4]
 
 		points, err := strconv.ParseFloat(trimmedTds[5], 32)
@@ -77,7 +82,12 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 		// Row with session but no semester (new session group, continuation)
 		program.Session = trimmedTds[1]
 		program.EventName = trimmedTds[2]
-		program.Type = trimmedTds[3]
+		if trimmedTds[3] != "" {
+			typeVal := trimmedTds[3]
+			program.Type = &typeVal
+		} else {
+			program.Type = nil
+		}
 		program.Level = trimmedTds[4]
 
 		points, err := strconv.ParseFloat(trimmedTds[5], 32)
@@ -95,7 +105,12 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 		// Continuation row - no semester or session, use previous session
 		program.Session = *lastSession
 		program.EventName = trimmedTds[2]
-		program.Type = trimmedTds[3]
+		if trimmedTds[3] != "" {
+			typeVal := trimmedTds[3]
+			program.Type = &typeVal
+		} else {
+			program.Type = nil
+		}
 		program.Level = trimmedTds[4]
 
 		points, err := strconv.ParseFloat(trimmedTds[5], 32)
