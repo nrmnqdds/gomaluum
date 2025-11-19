@@ -44,8 +44,10 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 		trimmedTds[i] = strings.TrimSpace(td)
 	}
 
-	// Skip empty rows or header rows
-	if trimmedTds[2] == "" || strings.HasPrefix(trimmedTds[0], "PROGRAMMES") {
+	// Skip empty rows, header rows, or summary rows
+	if trimmedTds[2] == "" || strings.HasPrefix(trimmedTds[0], "PROGRAMMES") ||
+		strings.Contains(trimmedTds[2], "Cummulative Average") ||
+		strings.Contains(trimmedTds[4], "Total Point") {
 		return
 	}
 
@@ -186,28 +188,34 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Check if this is a summary row (Cummulative Average or Total Point)
-		firstCellText := cells.First().Text()
-		if strings.Contains(firstCellText, "Cummulative Average") {
-			if starpoint.CummulativeAverage == 0 {
-				starpoint.CummulativeAverage = getFloatFromString(firstCellText)
-			}
-			return
-		}
-
-		if strings.Contains(firstCellText, "Total Point") {
-			if starpoint.TotalPoints == 0 {
-				starpoint.TotalPoints = getFloatFromString(firstCellText)
-			}
-			return
-		}
-
 		tds := programTdStringSlicePool.Get().([]string)
 		tds = tds[:0] // Reset slice
 
 		cells.Each(func(_ int, s *goquery.Selection) {
 			tds = append(tds, s.Text())
 		})
+
+		// Check if this is a summary row (Cummulative Average or Total Point)
+		// These values appear in different cells
+		for _, cellText := range tds {
+			trimmedCell := strings.TrimSpace(cellText)
+			if strings.Contains(trimmedCell, "Cummulative Average") {
+				if starpoint.CummulativeAverage == 0 {
+					starpoint.CummulativeAverage = getFloatFromString(trimmedCell)
+					logger.Sugar().Debugf("Found Cummulative Average: %f", starpoint.CummulativeAverage)
+				}
+				programTdStringSlicePool.Put(tds)
+				return
+			}
+			if strings.Contains(trimmedCell, "Total Point") {
+				if starpoint.TotalPoints == 0 {
+					starpoint.TotalPoints = getFloatFromString(trimmedCell)
+					logger.Sugar().Debugf("Found Total Point: %f", starpoint.TotalPoints)
+				}
+				programTdStringSlicePool.Put(tds)
+				return
+			}
+		}
 
 		parseProgramRows(tds, &programs, &mu, &lastSession, logger)
 
