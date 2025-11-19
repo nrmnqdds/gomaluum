@@ -14,7 +14,7 @@ import (
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
-	"github.com/rung/go-safecast"
+	"go.uber.org/zap"
 )
 
 // Object pools for memory reuse
@@ -31,36 +31,85 @@ var programTdStringSlicePool = sync.Pool{
 }
 
 // Parse table row with object pooling
-func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.Mutex) {
-	if len(tds) == 0 {
+func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.Mutex, lastSession *string, logger *zap.Logger) {
+	if len(tds) != 6 {
 		return
 	}
 
 	var program *dtos.StarpointProgram
 
-	// Handle perfect cell (6 columns)
-	if len(tds) == 6 {
-		program = programPool.Get().(*dtos.StarpointProgram)
-		*program = dtos.StarpointProgram{} // Reset
+	// Trim all cells
+	trimmedTds := make([]string, 6)
+	for i, td := range tds {
+		trimmedTds[i] = strings.TrimSpace(td)
+	}
 
-		section, err := safecast.Atoi8(strings.TrimSpace(tds[0]))
+	// Skip empty rows or header rows
+	if trimmedTds[2] == "" || strings.HasPrefix(trimmedTds[0], "PROGRAMMES") {
+		return
+	}
+
+	logger.Sugar().Debugf("Processing row: %v", trimmedTds)
+
+	program = programPool.Get().(*dtos.StarpointProgram)
+	*program = dtos.StarpointProgram{} // Reset
+
+	// Check if this is a new session row (has semester number and session)
+	if trimmedTds[0] != "" && trimmedTds[1] != "" {
+		// Full row with semester and session
+		program.Session = trimmedTds[1]
+		program.EventName = trimmedTds[2]
+		program.Type = trimmedTds[3]
+		program.Level = trimmedTds[4]
+
+		points, err := strconv.ParseFloat(trimmedTds[5], 32)
 		if err != nil {
-			programPool.Put(program)
-			return
-		}
-
-		program.Semester = uint8(section)
-		program.Session = strings.TrimSpace(tds[1])
-		program.EventName = strings.TrimSpace(tds[2])
-		program.Type = strings.TrimSpace(tds[3])
-		program.Level = strings.TrimSpace(tds[4])
-
-		points, err := strconv.ParseFloat(strings.TrimSpace(tds[5]), 32)
-		if err != nil {
+			logger.Sugar().Warnf("Failed to parse points '%s': %v", trimmedTds[5], err)
 			programPool.Put(program)
 			return
 		}
 		program.Points = float32(points)
+
+		// Update last session for continuation rows
+		*lastSession = program.Session
+		logger.Sugar().Debugf("New session row: %s - %s", program.Session, program.EventName)
+	} else if trimmedTds[1] != "" && trimmedTds[0] == "" {
+		// Row with session but no semester (new session group, continuation)
+		program.Session = trimmedTds[1]
+		program.EventName = trimmedTds[2]
+		program.Type = trimmedTds[3]
+		program.Level = trimmedTds[4]
+
+		points, err := strconv.ParseFloat(trimmedTds[5], 32)
+		if err != nil {
+			logger.Sugar().Warnf("Failed to parse points '%s': %v", trimmedTds[5], err)
+			programPool.Put(program)
+			return
+		}
+		program.Points = float32(points)
+
+		// Update last session
+		*lastSession = program.Session
+		logger.Sugar().Debugf("Session continuation row: %s - %s", program.Session, program.EventName)
+	} else if *lastSession != "" {
+		// Continuation row - no semester or session, use previous session
+		program.Session = *lastSession
+		program.EventName = trimmedTds[2]
+		program.Type = trimmedTds[3]
+		program.Level = trimmedTds[4]
+
+		points, err := strconv.ParseFloat(trimmedTds[5], 32)
+		if err != nil {
+			logger.Sugar().Warnf("Failed to parse points '%s': %v", trimmedTds[5], err)
+			programPool.Put(program)
+			return
+		}
+		program.Points = float32(points)
+		logger.Sugar().Debugf("Continuation row (using %s): %s", *lastSession, program.EventName)
+	} else {
+		logger.Sugar().Warnf("Skipping row with no session context: %v", trimmedTds)
+		programPool.Put(program)
+		return
 	}
 
 	if program != nil {
@@ -96,11 +145,12 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var (
-		logger    = s.log.GetLogger()
-		cookie    = r.Context().Value(ctxToken).(string)
-		mu        sync.Mutex
-		programs  []dtos.StarpointProgram
-		starpoint = &dtos.Starpoint{}
+		logger      = s.log.GetLogger()
+		cookie      = r.Context().Value(ctxToken).(string)
+		mu          sync.Mutex
+		programs    []dtos.StarpointProgram
+		starpoint   = &dtos.Starpoint{}
+		lastSession string
 	)
 
 	// Pre-build cookie string once
@@ -121,34 +171,30 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Check if this is a summary row (Cummulative Average or Total Point)
+		firstCellText := cells.First().Text()
+		if strings.Contains(firstCellText, "Cummulative Average") {
+			if starpoint.CummulativeAverage == 0 {
+				starpoint.CummulativeAverage = getFloatFromString(firstCellText)
+			}
+			return
+		}
+
+		if strings.Contains(firstCellText, "Total Point") {
+			if starpoint.TotalPoints == 0 {
+				starpoint.TotalPoints = getFloatFromString(firstCellText)
+			}
+			return
+		}
+
 		tds := programTdStringSlicePool.Get().([]string)
 		tds = tds[:0] // Reset slice
 
 		cells.Each(func(_ int, s *goquery.Selection) {
-			if strings.TrimSpace(strings.Split(s.Text(), ":")[0]) == "Cummulative Average" {
-				// Special case for Cummulative Average row
-				if starpoint.CummulativeAverage != 0 {
-					logger.Sugar().Warn("Cummulative Average already set, skipping duplicate")
-					logger.Sugar().Debugf("Current value: %f, new value: %s", starpoint.CummulativeAverage, s.Text())
-					return
-				}
-				starpoint.CummulativeAverage = getFloatFromString(s.Text())
-				return
-			}
-
-			if strings.TrimSpace(strings.Split(s.Text(), ":")[0]) == "Total Point" {
-				// Special case for Total Point row
-				if starpoint.TotalPoints != 0 {
-					logger.Sugar().Warn("Total Point already set, skipping duplicate")
-					logger.Sugar().Debugf("Current value: %f, new value: %s", starpoint.CummulativeAverage, s.Text())
-					return
-				}
-				starpoint.TotalPoints = getFloatFromString(s.Text())
-				return
-			}
 			tds = append(tds, s.Text())
 		})
-		parseProgramRows(tds, &programs, &mu)
+
+		parseProgramRows(tds, &programs, &mu, &lastSession, logger)
 
 		programTdStringSlicePool.Put(tds)
 	})

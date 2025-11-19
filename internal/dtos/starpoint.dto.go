@@ -9,7 +9,6 @@ type Starpoint struct {
 
 type StarpointProgram struct {
 	ID        string  `json:"id"`
-	Semester  uint8   `json:"semester"`
 	Session   string  `json:"session"`
 	EventName string  `json:"event_name"`
 	Type      string  `json:"type"`
