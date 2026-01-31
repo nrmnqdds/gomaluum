@@ -23,7 +23,13 @@ func (s *Server) AdsHandler(w http.ResponseWriter, r *http.Request) {
 
 	logger := s.log.GetLogger()
 	ads := []dtos.Ads{}
+
 	c := colly.NewCollector()
+	c.WithTransport(s.httpClient.Transport)
+
+	c.OnRequest(func(r *colly.Request) {
+		r.Headers.Set("User-Agent", cuid.New())
+	})
 
 	c.OnHTML("div[style*='width:100%; clear:both;height:100px']", func(e *colly.HTMLElement) {
 		ads = append(ads, dtos.Ads{
