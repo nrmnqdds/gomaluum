@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/gocolly/colly/v2"
-	"github.com/lucsky/cuid"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
@@ -144,15 +143,19 @@ func (s *Server) Profile(cookie string) (*dtos.Profile, error) {
 	// Pre-build cookie string
 	cookieStr := "MOD_AUTH_CAS=" + cookie
 
-	c := colly.NewCollector()
+	c := colly.NewCollector(
+		colly.Headers(
+			map[string]string{
+				"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+				"Accept-Language": "en-US,en;q=0.9",
+				"Cookie":          cookieStr,
+			},
+		),
+		colly.UserAgent(constants.UserAgent),
+	)
 	c.WithTransport(s.httpClient.Transport)
 
 	var profileResult *dtos.Profile
-
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("Cookie", cookieStr)
-		r.Headers.Set("User-Agent", cuid.New())
-	})
 
 	c.OnHTML("body", func(e *colly.HTMLElement) {
 		// Extract all profile data efficiently

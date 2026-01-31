@@ -238,16 +238,20 @@ func (s *Server) scheduleWorker(jobs <-chan scheduleJob, results chan<- schedule
 		func() {
 			defer utils.CatchPanic("schedule worker")
 
-			c := colly.NewCollector()
+			c := colly.NewCollector(
+				colly.Headers(
+					map[string]string{
+						"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+						"Accept-Language": "en-US,en;q=0.9",
+						"Cookie":          cookieStr,
+					},
+				),
+				colly.UserAgent(constants.UserAgent),
+			)
 			c.WithTransport(s.httpClient.Transport)
 
 			mu := sync.Mutex{}
 			subjects := []dtos.ScheduleSubject{}
-
-			c.OnRequest(func(r *colly.Request) {
-				r.Headers.Set("Cookie", cookieStr)
-				r.Headers.Set("User-Agent", cuid.New())
-			})
 
 			c.OnHTML("table.table-hover tbody tr", func(e *colly.HTMLElement) {
 				// Get all text at once with efficient DOM traversal
@@ -354,13 +358,17 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	// Pre-build cookie string once
 	cookieStr := "MOD_AUTH_CAS=" + cookie
 
-	c := colly.NewCollector()
+	c := colly.NewCollector(
+		colly.Headers(
+			map[string]string{
+				"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+				"Accept-Language": "en-US,en;q=0.9",
+				"Cookie":          cookieStr,
+			},
+		),
+		colly.UserAgent(constants.UserAgent),
+	)
 	c.WithTransport(s.httpClient.Transport)
-
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("Cookie", cookieStr)
-		r.Headers.Set("User-Agent", cuid.New())
-	})
 
 	c.OnHTML(".box.box-primary .box-header.with-border .dropdown ul.dropdown-menu", func(e *colly.HTMLElement) {
 		sessionQueries = e.ChildAttrs("li[style*='font-size:16px'] a", "href")

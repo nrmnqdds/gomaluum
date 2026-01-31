@@ -174,13 +174,15 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 	// Pre-build cookie string once
 	cookieStr := "MOD_AUTH_CAS=" + cookie
 
-	c := colly.NewCollector()
+	c := colly.NewCollector(
+		colly.Headers(map[string]string{
+			"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+			"Accept-Language": "en-US,en;q=0.9",
+			"Cookie":          cookieStr,
+		}),
+		colly.UserAgent(constants.UserAgent),
+	)
 	c.WithTransport(s.httpClient.Transport)
-
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("Cookie", cookieStr)
-		r.Headers.Set("User-Agent", cuid.New())
-	})
 
 	c.OnHTML("table.table.table-hover tbody tr", func(e *colly.HTMLElement) {
 		// Get all text at once with efficient DOM traversal
