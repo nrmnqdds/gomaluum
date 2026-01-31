@@ -42,7 +42,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Call the Login method from the external GRPC service
-	resp, err := s.grpc.client.Login(ctx, user)
+	resp, err := s.grpcClients.GASClient.Login(ctx, user)
 	if err != nil {
 		logger.Sugar().Errorf("Login failed: %v", err)
 		fmt.Println("Login failed:", err)

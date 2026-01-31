@@ -28,44 +28,90 @@ type Handlers interface {
 	ResultHandler(w http.ResponseWriter, r *http.Request)
 }
 
-type GRPCClient struct {
-	conn   *grpc.ClientConn
-	client auth_proto.AuthClient
+// GRPCClients holds connections to multiple gRPC services
+type GRPCClients struct {
+	// GAS - Gomaluum Auth Service
+	GASConn   *grpc.ClientConn
+	GASClient auth_proto.AuthClient
+
+	// GEI - Gomaluum Event Indexer (schedule indexer)
+	// Add the proto client type when you have it, for example:
+	// GEIConn   *grpc.ClientConn
+	// GEIClient schedule_proto.ScheduleClient
+	GEIConn *grpc.ClientConn
+	// GEIClient will be added when you have the proto definition
 }
 
-func NewGRPCClient(serviceURL string) (*GRPCClient, error) {
-	// Connect to the external gRPC service
-	conn, err := grpc.Dial(serviceURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to gRPC service at %s: %w", serviceURL, err)
-	}
-
-	client := auth_proto.NewAuthClient(conn)
-
-	return &GRPCClient{
-		conn:   conn,
-		client: client,
-	}, nil
+// GRPCServiceConfig holds configuration for a single gRPC service
+type GRPCServiceConfig struct {
+	Name string
+	URL  string
 }
 
-func (c *GRPCClient) Close() error {
-	if c.conn != nil {
-		return c.conn.Close()
+// NewGRPCClients creates and initializes all gRPC client connections
+func NewGRPCClients(configs []GRPCServiceConfig) (*GRPCClients, error) {
+	clients := &GRPCClients{}
+
+	for _, config := range configs {
+		conn, err := grpc.Dial(config.URL, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			// Close any previously opened connections before returning error
+			clients.Close()
+			return nil, fmt.Errorf("failed to connect to %s gRPC service at %s: %w", config.Name, config.URL, err)
+		}
+
+		// Route connection to appropriate service
+		switch config.Name {
+		case "GAS":
+			clients.GASConn = conn
+			clients.GASClient = auth_proto.NewAuthClient(conn)
+			log.Printf("Connected to GAS (Auth Service) at %s", config.URL)
+		case "GEI":
+			clients.GEIConn = conn
+			// When you have the proto definition, uncomment:
+			// clients.GEIClient = schedule_proto.NewScheduleClient(conn)
+			log.Printf("Connected to GEI (Schedule Indexer) at %s", config.URL)
+		default:
+			conn.Close()
+			return nil, fmt.Errorf("unknown gRPC service: %s", config.Name)
+		}
 	}
-	return nil
+
+	return clients, nil
+}
+
+// Close closes all gRPC connections
+func (c *GRPCClients) Close() error {
+	var lastErr error
+
+	if c.GASConn != nil {
+		if err := c.GASConn.Close(); err != nil {
+			log.Printf("Error closing GAS connection: %v", err)
+			lastErr = err
+		}
+	}
+
+	if c.GEIConn != nil {
+		if err := c.GEIConn.Close(); err != nil {
+			log.Printf("Error closing GEI connection: %v", err)
+			lastErr = err
+		}
+	}
+
+	return lastErr
 }
 
 type Server struct {
 	log          *logger.AppLogger
 	paseto       *paseto.AppPaseto
-	grpc         *GRPCClient
+	grpcClients  *GRPCClients
 	httpClient   *http.Client
 	port         int
 	tokenManager *sf.TokenManager
 	db           *sql.DB
 }
 
-func NewServer(port int, grpc *GRPCClient) *http.Server {
+func NewServer(port int, grpcClients *GRPCClients) *http.Server {
 	paseto, err := paseto.New()
 	if err != nil {
 		log.Fatalf("Failed to create paseto: %v", err)
@@ -121,7 +167,7 @@ func NewServer(port int, grpc *GRPCClient) *http.Server {
 		port:         port,
 		log:          logger.New(),
 		paseto:       paseto,
-		grpc:         grpc,
+		grpcClients:  grpcClients,
 		httpClient:   httpClient,
 		tokenManager: tm,
 		db:           db,
@@ -175,7 +221,7 @@ func createHTTPClient() (*http.Client, error) {
 	}, nil
 }
 
-// Close closes the database connection and gRPC client connection if they exist
+// Close closes the database connection and gRPC client connections if they exist
 func (s *Server) Close() error {
 	var dbErr, grpcErr error
 
@@ -183,8 +229,8 @@ func (s *Server) Close() error {
 		dbErr = s.db.Close()
 	}
 
-	if s.grpc != nil {
-		grpcErr = s.grpc.Close()
+	if s.grpcClients != nil {
+		grpcErr = s.grpcClients.Close()
 	}
 
 	if dbErr != nil {

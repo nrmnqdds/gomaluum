@@ -86,18 +86,36 @@ func main() {
 		log.Println("Running in production mode")
 	}
 
-	// Get gRPC service URL from environment
-	grpcServiceURL := os.Getenv("GRPC_SERVICE_URL")
-	if grpcServiceURL == "" {
-		log.Fatal("GRPC_SERVICE_URL environment variable is required")
+	// Get gRPC service URLs from environment
+	gasServiceURL := os.Getenv("GAS_SERVICE_URL") // Auth service
+	geiServiceURL := os.Getenv("GEI_SERVICE_URL") // Schedule indexer service
+
+	// Validate required services
+	if gasServiceURL == "" {
+		log.Fatal("GAS_SERVICE_URL environment variable is required")
+	}
+	if geiServiceURL == "" {
+		log.Fatal("GEI_SERVICE_URL environment variable is required")
 	}
 
-	// Initialize gRPC client connection to external service
-	grpcClient, err := server.NewGRPCClient(grpcServiceURL)
-	if err != nil {
-		log.Fatalf("failed to connect to gRPC service: %v", err)
+	// Configure all gRPC services
+	grpcConfigs := []server.GRPCServiceConfig{
+		{
+			Name: "GAS",
+			URL:  gasServiceURL,
+		},
+		{
+			Name: "GEI",
+			URL:  geiServiceURL,
+		},
 	}
-	defer grpcClient.Close()
+
+	// Initialize all gRPC client connections
+	grpcClients, err := server.NewGRPCClients(grpcConfigs)
+	if err != nil {
+		log.Fatalf("failed to connect to gRPC services: %v", err)
+	}
+	defer grpcClients.Close()
 
 	port, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
@@ -105,7 +123,7 @@ func main() {
 	}
 
 	server.DocsPath = DocsPath
-	httpServer := server.NewServer(port, grpcClient)
+	httpServer := server.NewServer(port, grpcClients)
 
 	// Create channels to track server status
 	done := make(chan bool, 1)
@@ -125,7 +143,9 @@ func main() {
 		`))
 
 	fmt.Println(gchalk.Yellow("====================================================="))
-	fmt.Println(gchalk.Green(fmt.Sprintf("Connected to gRPC service at %s", grpcServiceURL)))
+	fmt.Println(gchalk.Green("Connected to gRPC services:"))
+	fmt.Println(gchalk.Green(fmt.Sprintf("  • GAS (Auth Service): %s", gasServiceURL)))
+	fmt.Println(gchalk.Green(fmt.Sprintf("  • GEI (Schedule Indexer): %s", geiServiceURL)))
 
 	// Start HTTP server
 	go func() {
