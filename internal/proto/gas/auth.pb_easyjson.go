@@ -17,7 +17,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProto(in *jlexer.Lexer, out *LoginResponse) {
+func easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProtoGas(in *jlexer.Lexer, out *LoginResponse) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -30,18 +30,25 @@ func easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProto(in *jlexer.Lex
 	for !in.IsDelim('}') {
 		key := in.UnsafeFieldName(false)
 		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
 		switch key {
 		case "token":
-			out.Token = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.Token = string(in.String())
+			}
 		case "username":
-			out.Username = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.Username = string(in.String())
+			}
 		case "password":
-			out.Password = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.Password = string(in.String())
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -52,7 +59,7 @@ func easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProto(in *jlexer.Lex
 		in.Consumed()
 	}
 }
-func easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProto(out *jwriter.Writer, in LoginResponse) {
+func easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProtoGas(out *jwriter.Writer, in LoginResponse) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -88,27 +95,27 @@ func easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProto(out *jwriter.W
 // MarshalJSON supports json.Marshaler interface
 func (v LoginResponse) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProto(&w, v)
+	easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProtoGas(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v LoginResponse) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProto(w, v)
+	easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProtoGas(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *LoginResponse) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProto(&r, v)
+	easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProtoGas(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *LoginResponse) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProto(l, v)
+	easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProtoGas(l, v)
 }
-func easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProto1(in *jlexer.Lexer, out *LoginRequest) {
+func easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProtoGas1(in *jlexer.Lexer, out *LoginRequest) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -121,16 +128,19 @@ func easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProto1(in *jlexer.Le
 	for !in.IsDelim('}') {
 		key := in.UnsafeFieldName(false)
 		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
 		switch key {
 		case "username":
-			out.Username = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.Username = string(in.String())
+			}
 		case "password":
-			out.Password = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.Password = string(in.String())
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -141,7 +151,7 @@ func easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProto1(in *jlexer.Le
 		in.Consumed()
 	}
 }
-func easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProto1(out *jwriter.Writer, in LoginRequest) {
+func easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProtoGas1(out *jwriter.Writer, in LoginRequest) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -167,23 +177,23 @@ func easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProto1(out *jwriter.
 // MarshalJSON supports json.Marshaler interface
 func (v LoginRequest) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProto1(&w, v)
+	easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProtoGas1(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v LoginRequest) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProto1(w, v)
+	easyjsonA8fbe0d0EncodeGithubComNrmnqddsGomaluumInternalProtoGas1(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *LoginRequest) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProto1(&r, v)
+	easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProtoGas1(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *LoginRequest) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProto1(l, v)
+	easyjsonA8fbe0d0DecodeGithubComNrmnqddsGomaluumInternalProtoGas1(l, v)
 }

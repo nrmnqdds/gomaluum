@@ -8,7 +8,7 @@ import (
 	"github.com/cristalhq/base64"
 
 	"aidanwoods.dev/go-paseto"
-	pb "github.com/nrmnqdds/gomaluum/internal/proto"
+	gas "github.com/nrmnqdds/gomaluum/internal/proto/gas"
 	"github.com/nrmnqdds/gomaluum/pkg/apikey"
 )
 
@@ -131,7 +131,7 @@ func (s *Server) DecodePasetoToken(token, userAPIKey string) (*TokenPayload, err
 			// regenerate the token
 			logger.Sugar().Infof("Refreshing session token with username: %s, password: %s", username, string(decodedPassword))
 
-			resp, err := s.grpcClients.GASClient.Login(ctx, &pb.LoginRequest{
+			resp, err := s.grpcClients.GASClient.Login(ctx, &gas.LoginRequest{
 				Username: username,
 				Password: string(decodedPassword),
 			})

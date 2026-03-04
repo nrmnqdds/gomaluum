@@ -12,7 +12,7 @@ import (
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
-	pb "github.com/nrmnqdds/gomaluum/internal/proto"
+	gas "github.com/nrmnqdds/gomaluum/internal/proto/gas"
 	"github.com/nrmnqdds/gomaluum/pkg/apikey"
 )
 
@@ -32,7 +32,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	logger := s.log.GetLogger()
 
-	user := &pb.LoginRequest{}
+	user := &gas.LoginRequest{}
 
 	// Bind the request body to the user struct
 	if err := easyjson.UnmarshalFromReader(r.Body, user); err != nil {
@@ -81,7 +81,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := &pb.LoginResponse{
+	result := &gas.LoginResponse{
 		Token:    newCookie,
 		Username: resp.Username,
 	}

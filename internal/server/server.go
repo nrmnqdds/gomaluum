@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	auth_proto "github.com/nrmnqdds/gomaluum/internal/proto"
+	auth_proto "github.com/nrmnqdds/gomaluum/internal/proto/gas"
 	"github.com/nrmnqdds/gomaluum/pkg/logger"
 	"github.com/nrmnqdds/gomaluum/pkg/paseto"
 	"github.com/nrmnqdds/gomaluum/pkg/sf"
@@ -53,7 +53,7 @@ func NewGRPCClients(configs []GRPCServiceConfig) (*GRPCClients, error) {
 	clients := &GRPCClients{}
 
 	for _, config := range configs {
-		conn, err := grpc.Dial(config.URL, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.NewClient(config.URL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			// Close any previously opened connections before returning error
 			clients.Close()
