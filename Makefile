@@ -78,11 +78,15 @@ swagger:
 
 proto:
 	@echo "Generating proto..."
-	@protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ./internal/proto/*.proto
+	@protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ./internal/proto/**/*.proto
 
 # Modernize
 modernize:
 	@echo "Modernizing..."
 	@go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -fix -test ./...
+
+easyjson:
+	@echo "Generating fast JSON serializer..."
+	@easyjson -all $(filename)
 
 .PHONY: all build run test clean watch lint align swagger proto modernize
