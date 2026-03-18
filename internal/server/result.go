@@ -230,6 +230,108 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 		sessionNames   []string
 	)
 
+	// Return fake data for fake user
+	if cookie == constants.DebugUserCookie {
+		fakeResults := []dtos.ResultResponse{
+			{
+				ID:           fmt.Sprintf("gomaluum:result:%s", cuid.Slug()),
+				SessionName:  "2024/2025 Semester 1",
+				SessionQuery: "?ses=2024/2025&sem=1",
+				GpaValue:     "3.67",
+				CgpaValue:    "3.75",
+				CreditHours:  "15",
+				Status:       "Active",
+				Result: []dtos.Result{
+					{
+						ID:           fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode:   "INFO4335",
+						CourseName:   "Software Engineering",
+						CourseGrade:  "A",
+						CourseCredit: "3",
+					},
+					{
+						ID:           fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode:   "INFO4327",
+						CourseName:   "Database Systems",
+						CourseGrade:  "A-",
+						CourseCredit: "3",
+					},
+					{
+						ID:           fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode:   "INFO4501",
+						CourseName:   "Web Development",
+						CourseGrade:  "B+",
+						CourseCredit: "4",
+					},
+					{
+						ID:           fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode:   "INFO4210",
+						CourseName:   "Mobile Application Development",
+						CourseGrade:  "A",
+						CourseCredit: "3",
+					},
+					{
+						ID:           fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode:   "UNGS2040",
+						CourseName:   "Tamadun Islam dan Tamadun Asia (TITAS)",
+						CourseGrade:  "B+",
+						CourseCredit: "2",
+					},
+				},
+			},
+			{
+				ID:           fmt.Sprintf("gomaluum:result:%s", cuid.Slug()),
+				SessionName:  "2023/2024 Semester 2",
+				SessionQuery: "?ses=2023/2024&sem=2",
+				GpaValue:     "3.67",
+				CgpaValue:    "3.72",
+				CreditHours:  "12",
+				Status:       "Active",
+				Result: []dtos.Result{
+					{
+						ID:           fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode:   "INFO3202",
+						CourseName:   "Data Structures and Algorithms",
+						CourseGrade:  "A",
+						CourseCredit: "3",
+					},
+					{
+						ID:           fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode:   "INFO3150",
+						CourseName:   "Computer Networks",
+						CourseGrade:  "B+",
+						CourseCredit: "3",
+					},
+					{
+						ID:           fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode:   "INFO3240",
+						CourseName:   "Operating Systems",
+						CourseGrade:  "A-",
+						CourseCredit: "3",
+					},
+					{
+						ID:           fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode:   "INFO3301",
+						CourseName:   "Human Computer Interaction",
+						CourseGrade:  "B+",
+						CourseCredit: "3",
+					},
+				},
+			},
+		}
+
+		response := &dtos.ResponseDTO{
+			Message: "Successfully fetched results",
+			Data:    fakeResults,
+		}
+
+		if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
+			logger.Sugar().Errorf("Failed to encode response: %v", err)
+			errors.Render(w, r, errors.ErrFailedToEncodeResponse)
+		}
+		return
+	}
+
 	// Pre-build cookie string once
 	cookieStr := "MOD_AUTH_CAS=" + cookie
 

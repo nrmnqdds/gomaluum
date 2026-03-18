@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -41,15 +40,25 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Call the Login method from the external GRPC service
-	resp, err := s.grpc.client.Login(ctx, user)
-	if err != nil {
-		logger.Sugar().Errorf("Login failed: %v", err)
-		fmt.Println("Login failed:", err)
-		fmt.Println("Login failed resp:", resp)
-		// errors.Render(w, r, err)
-		errors.Render(w, r, errors.ErrLoginFailed)
-		return
+	// Intercept fake user for local debugging
+	var resp *pb.LoginResponse
+	var err error
+
+	if user.Username == "fakeuser" && user.Password == "fakepass" {
+		logger.Sugar().Info("Using fake user for debugging")
+		resp = &pb.LoginResponse{
+			Username: "fakeuser",
+			Password: "fakepass",
+			Token:    constants.DebugUserCookie,
+		}
+	} else {
+		// Call the Login method from the external GRPC service
+		resp, err = s.grpc.client.Login(ctx, user)
+		if err != nil {
+			logger.Sugar().Errorf("Login failed: %v", err)
+			errors.Render(w, r, errors.ErrLoginFailed)
+			return
+		}
 	}
 
 	// Get API key from header

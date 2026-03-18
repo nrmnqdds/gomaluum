@@ -16,4 +16,5 @@ const (
 	ImaluumStudyPlanPage        = "https://imaluum.iium.edu.my/MyAcademic/studyplan"
 	ImaluumStarpointPage        = "https://imaluum.iium.edu.my/CoCurriculum"
 	TimeSeparator               = "-"
+	DebugUserCookie             = "gomaluum_debug_user"
 )
