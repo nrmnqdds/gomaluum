@@ -17,4 +17,6 @@ const (
 	ImaluumStarpointPage        = "https://imaluum.iium.edu.my/CoCurriculum"
 	TimeSeparator               = "-"
 	DebugUserCookie             = "gomaluum_debug_user"
+	DebugUsername               = "2214227"
+	DebugPassword               = "fakepass"
 )

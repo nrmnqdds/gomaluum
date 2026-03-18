@@ -44,11 +44,11 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var resp *pb.LoginResponse
 	var err error
 
-	if user.Username == "fakeuser" && user.Password == "fakepass" {
+	if user.Username == constants.DebugUsername && user.Password == constants.DebugPassword {
 		logger.Sugar().Info("Using fake user for debugging")
 		resp = &pb.LoginResponse{
-			Username: "fakeuser",
-			Password: "fakepass",
+			Username: constants.DebugUsername,
+			Password: constants.DebugPassword,
 			Token:    constants.DebugUserCookie,
 		}
 	} else {
