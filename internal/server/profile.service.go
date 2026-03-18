@@ -141,6 +141,23 @@ func extractProfileData(e *colly.HTMLElement) *profileData {
 func (s *Server) Profile(cookie string) (*dtos.Profile, error) {
 	logger := s.log.GetLogger()
 
+	// Return fake data for fake user
+	if cookie == constants.DebugUserCookie {
+		return &dtos.Profile{
+			Name:          "MUHAMMAD IZZAT BIN ABDUL RAHMAN",
+			MatricNo:      "2214227",
+			Level:         "4",
+			Kuliyyah:      "Kulliyyah of Information and Communication Technology",
+			IC:            "010123-01-0456",
+			Gender:        "Male",
+			Birthday:      "23 Jan 2001",
+			Religion:      "Islam",
+			MaritalStatus: "Single",
+			Address:       "No. 123, Jalan Bunga Raya, Taman Melati, 53100 Kuala Lumpur, Wilayah Persekutuan",
+			ImageURL:      "https://smartcard.iium.edu.my/packages/card/printing/camera/uploads/original/2214227.jpeg",
+		}, nil
+	}
+
 	// Pre-build cookie string
 	cookieStr := "MOD_AUTH_CAS=" + cookie
 

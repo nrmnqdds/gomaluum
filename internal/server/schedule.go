@@ -351,6 +351,205 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		sessionNames   []string
 	)
 
+	// Return fake data for fake user
+	if cookie == constants.DebugUserCookie {
+		now := time.Now()
+		KLTimezone, err := time.LoadLocation("Asia/Kuala_Lumpur")
+		if err != nil {
+			logger.Sugar().Errorf("Error loading timezone: %v", err)
+			KLTimezone = time.UTC
+		}
+
+		morning9am, _ := time.ParseInLocation("2006-01-02 1504", fmt.Sprintf("%04d-%02d-%02d 0900", now.Year(), now.Month(), now.Day()), KLTimezone)
+		morning11am, _ := time.ParseInLocation("2006-01-02 1504", fmt.Sprintf("%04d-%02d-%02d 1100", now.Year(), now.Month(), now.Day()), KLTimezone)
+		afternoon2pm, _ := time.ParseInLocation("2006-01-02 1504", fmt.Sprintf("%04d-%02d-%02d 1400", now.Year(), now.Month(), now.Day()), KLTimezone)
+		afternoon4pm, _ := time.ParseInLocation("2006-01-02 1504", fmt.Sprintf("%04d-%02d-%02d 1600", now.Year(), now.Month(), now.Day()), KLTimezone)
+		evening5pm, _ := time.ParseInLocation("2006-01-02 1504", fmt.Sprintf("%04d-%02d-%02d 1700", now.Year(), now.Month(), now.Day()), KLTimezone)
+		evening7pm, _ := time.ParseInLocation("2006-01-02 1504", fmt.Sprintf("%04d-%02d-%02d 1900", now.Year(), now.Month(), now.Day()), KLTimezone)
+
+		fakeSchedule := []dtos.ScheduleResponse{
+			{
+				ID:           fmt.Sprintf("gomaluum:schedule:%s", cuid.Slug()),
+				SessionName:  "2024/2025 Semester 1",
+				SessionQuery: "?ses=2024/2025&sem=1",
+				Schedule: []dtos.ScheduleSubject{
+					{
+						ID:         fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode: "INFO4335",
+						CourseName: "Software Engineering",
+						Venue:      "E1-LT4",
+						Lecturer:   "Dr. Muhammad Ali bin Ahmad",
+						Section:    1,
+						Chr:        3.0,
+						Timestamps: []dtos.WeekTime{
+							{
+								Start:     "0900",
+								StartUnix: morning9am.Unix(),
+								End:       "1100",
+								EndUnix:   morning11am.Unix(),
+								Day:       1,
+							},
+							{
+								Start:     "0900",
+								StartUnix: morning9am.Unix(),
+								End:       "1100",
+								EndUnix:   morning11am.Unix(),
+								Day:       3,
+							},
+						},
+					},
+					{
+						ID:         fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode: "INFO4327",
+						CourseName: "Database Systems",
+						Venue:      "E2-LT2",
+						Lecturer:   "Prof. Dr. Siti Aminah binti Abdullah",
+						Section:    2,
+						Chr:        3.0,
+						Timestamps: []dtos.WeekTime{
+							{
+								Start:     "1400",
+								StartUnix: afternoon2pm.Unix(),
+								End:       "1600",
+								EndUnix:   afternoon4pm.Unix(),
+								Day:       2,
+							},
+							{
+								Start:     "1400",
+								StartUnix: afternoon2pm.Unix(),
+								End:       "1600",
+								EndUnix:   afternoon4pm.Unix(),
+								Day:       4,
+							},
+						},
+					},
+					{
+						ID:         fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode: "INFO4501",
+						CourseName: "Web Development",
+						Venue:      "E3-LAB1",
+						Lecturer:   "Dr. Ahmad bin Hassan",
+						Section:    1,
+						Chr:        4.0,
+						Timestamps: []dtos.WeekTime{
+							{
+								Start:     "0900",
+								StartUnix: morning9am.Unix(),
+								End:       "1100",
+								EndUnix:   morning11am.Unix(),
+								Day:       2,
+							},
+							{
+								Start:     "1400",
+								StartUnix: afternoon2pm.Unix(),
+								End:       "1600",
+								EndUnix:   afternoon4pm.Unix(),
+								Day:       5,
+							},
+						},
+					},
+					{
+						ID:         fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode: "INFO4210",
+						CourseName: "Mobile Application Development",
+						Venue:      "E1-LAB2",
+						Lecturer:   "Dr. Fatimah binti Ibrahim",
+						Section:    3,
+						Chr:        3.0,
+						Timestamps: []dtos.WeekTime{
+							{
+								Start:     "1700",
+								StartUnix: evening5pm.Unix(),
+								End:       "1900",
+								EndUnix:   evening7pm.Unix(),
+								Day:       3,
+							},
+						},
+					},
+					{
+						ID:         fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode: "UNGS2040",
+						CourseName: "Tamadun Islam dan Tamadun Asia (TITAS)",
+						Venue:      "KAED-LT1",
+						Lecturer:   "Dr. Zainab binti Yusof",
+						Section:    5,
+						Chr:        2.0,
+						Timestamps: []dtos.WeekTime{
+							{
+								Start:     "0900",
+								StartUnix: morning9am.Unix(),
+								End:       "1100",
+								EndUnix:   morning11am.Unix(),
+								Day:       5,
+							},
+						},
+					},
+				},
+			},
+			{
+				ID:           fmt.Sprintf("gomaluum:schedule:%s", cuid.Slug()),
+				SessionName:  "2023/2024 Semester 2",
+				SessionQuery: "?ses=2023/2024&sem=2",
+				Schedule: []dtos.ScheduleSubject{
+					{
+						ID:         fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode: "INFO3202",
+						CourseName: "Data Structures and Algorithms",
+						Venue:      "E2-LT3",
+						Lecturer:   "Prof. Dr. Abdul Rahman bin Mohd",
+						Section:    1,
+						Chr:        3.0,
+						Timestamps: []dtos.WeekTime{
+							{
+								Start:     "1400",
+								StartUnix: afternoon2pm.Unix(),
+								End:       "1600",
+								EndUnix:   afternoon4pm.Unix(),
+								Day:       1,
+							},
+							{
+								Start:     "1400",
+								StartUnix: afternoon2pm.Unix(),
+								End:       "1600",
+								EndUnix:   afternoon4pm.Unix(),
+								Day:       3,
+							},
+						},
+					},
+					{
+						ID:         fmt.Sprintf("gomaluum:subject:%s", cuid.Slug()),
+						CourseCode: "INFO3150",
+						CourseName: "Computer Networks",
+						Venue:      "E3-LT1",
+						Lecturer:   "Dr. Nurul Huda binti Hassan",
+						Section:    2,
+						Chr:        3.0,
+						Timestamps: []dtos.WeekTime{
+							{
+								Start:     "0900",
+								StartUnix: morning9am.Unix(),
+								End:       "1100",
+								EndUnix:   morning11am.Unix(),
+								Day:       4,
+							},
+						},
+					},
+				},
+			},
+		}
+
+		response := &dtos.ResponseDTO{
+			Message: "Successfully fetched schedule",
+			Data:    fakeSchedule,
+		}
+
+		if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
+			logger.Sugar().Errorf("Failed to encode response: %v", err)
+			errors.Render(w, r, errors.ErrFailedToEncodeResponse)
+		}
+		return
+	}
+
 	// Pre-build cookie string once
 	cookieStr := "MOD_AUTH_CAS=" + cookie
 

@@ -8,6 +8,7 @@ import (
 	"github.com/cristalhq/base64"
 
 	"aidanwoods.dev/go-paseto"
+	"github.com/nrmnqdds/gomaluum/internal/constants"
 	pb "github.com/nrmnqdds/gomaluum/internal/proto"
 	"github.com/nrmnqdds/gomaluum/pkg/apikey"
 )
@@ -131,14 +132,27 @@ func (s *Server) DecodePasetoToken(token, userAPIKey string) (*TokenPayload, err
 			// regenerate the token
 			logger.Sugar().Infof("Refreshing session token with username: %s, password: %s", username, string(decodedPassword))
 
-			resp, err := s.grpc.client.Login(ctx, &pb.LoginRequest{
-				Username: username,
-				Password: string(decodedPassword),
-			})
+			// Intercept fake user for local debugging
+			var resp *pb.LoginResponse
+			var err error
 
-			if err != nil {
-				logger.Sugar().Errorf("Failed to login: %v", err)
-				return "", time.Now(), err
+			if username == constants.DebugUsername && string(decodedPassword) == constants.DebugPassword {
+				logger.Sugar().Info("Using fake user for debugging (token refresh)")
+				resp = &pb.LoginResponse{
+					Username: constants.DebugUsername,
+					Password: constants.DebugPassword,
+					Token:    constants.DebugUserCookie,
+				}
+			} else {
+				resp, err = s.grpc.client.Login(ctx, &pb.LoginRequest{
+					Username: username,
+					Password: string(decodedPassword),
+				})
+
+				if err != nil {
+					logger.Sugar().Errorf("Failed to login: %v", err)
+					return "", time.Now(), err
+				}
 			}
 
 			return resp.Token, time.Now(), nil
