@@ -11,6 +11,7 @@ import (
 	"time"
 
 	auth_proto "github.com/nrmnqdds/gomaluum/internal/proto/gas"
+	indexer_proto "github.com/nrmnqdds/gomaluum/internal/proto/gei"
 	"github.com/nrmnqdds/gomaluum/pkg/logger"
 	"github.com/nrmnqdds/gomaluum/pkg/paseto"
 	"github.com/nrmnqdds/gomaluum/pkg/sf"
@@ -35,11 +36,8 @@ type GRPCClients struct {
 	GASClient auth_proto.AuthClient
 
 	// GEI - Gomaluum Event Indexer (schedule indexer)
-	// Add the proto client type when you have it, for example:
-	// GEIConn   *grpc.ClientConn
-	// GEIClient schedule_proto.ScheduleClient
-	GEIConn *grpc.ClientConn
-	// GEIClient will be added when you have the proto definition
+	GEIConn   *grpc.ClientConn
+	GEIClient indexer_proto.ScheduleIndexerClient
 }
 
 // GRPCServiceConfig holds configuration for a single gRPC service
