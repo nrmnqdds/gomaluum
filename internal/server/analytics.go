@@ -16,9 +16,11 @@ func (s *Server) UpdateAnalytics(matricNo string) error {
 		return nil
 	}
 
+	matricNo = strings.TrimSpace(matricNo)
+
 	// Edgecases for double degree student
 	// Remove leading "5" if present
-	if after, ok := strings.CutPrefix("5", matricNo); ok {
+	if after, ok := strings.CutPrefix(matricNo, "5"); ok {
 		matricNo = after
 	}
 
