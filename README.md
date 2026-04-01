@@ -1,5 +1,8 @@
 <img width="253" height="43" alt="gomaluum-v1" src="https://raw.githubusercontent.com/nrmnqdds/gomaluum/refs/heads/main/assets/gomaluum-logo-v2.png" />
 
+## Predecessor
+- [Node.JS version](https://github.com/nrmnqdds/imaluum-backend)
+
 ## 🚧 **In Construction** 🚧
 
 > [!IMPORTANT]
