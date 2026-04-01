@@ -61,6 +61,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		})
 
 		r.Get("/ads", s.AdsHandler)
+		r.Get("/academic-calendar", s.AcademicCalendarHandler)
 
 		// All routes in this group require authentication
 		r.Group(func(r chi.Router) {
