@@ -1,0 +1,62 @@
+[
+  {
+    "title": "LECTURES",
+    "start_date": "2025-10-06T00:00:00.000Z",
+    "end_date": "2025-11-21T00:00:00.000Z"
+  },
+  {
+    "title": "MID SEMESTER BREAK",
+    "start_date": "2025-11-22T00:00:00.000Z",
+    "end_date": "2025-11-30T00:00:00.000Z"
+  },
+  {
+    "title": "LECTURES",
+    "start_date": "2025-12-01T00:00:00Z",
+    "end_date": "2026-01-16T00:00:00Z"
+  },
+  {
+    "title": "REVISION PERIOD",
+    "start_date": "2026-01-17T00:00:00Z",
+    "end_date": "2026-01-21T00:00:00Z"
+  },
+  {
+    "title": "EXAMINATION PERIOD",
+    "start_date": "2026-01-22T00:00:00Z",
+    "end_date": "2026-02-13T00:00:00Z"
+  },
+  {
+    "title": "INTER SEMESTER VACATION",
+    "start_date": "2026-12-14T00:00:00Z",
+    "end_date": "2026-03-01T00:00:00Z"
+  },
+  {
+    "title": "LECTURES",
+    "start_date": "2026-03-02T00:00:00Z",
+    "end_date": "2026-04-17T00:00:00Z"
+  },
+  {
+    "title": "MID SEMESTER BREAK",
+    "start_date": "2026-04-18T00:00:00Z",
+    "end_date": "2026-04-26T00:00:00Z"
+  },
+  {
+    "title": "LECTURES",
+    "start_date": "2026-04-27T00:00:00Z",
+    "end_date": "2026-06-12T00:00:00Z"
+  },
+  {
+    "title": "REVISION PERIOD",
+    "start_date": "2026-06-13T00:00:00Z",
+    "end_date": "2026-06-17T00:00:00Z"
+  },
+  {
+    "title": "EXAMINATION PERIOD",
+    "start_date": "2026-06-18T00:00:00Z",
+    "end_date": "2026-07-10T00:00:00Z"
+  },
+  {
+    "title": "INTER SEMESTER VACATION",
+    "start_date": "2026-07-11T00:00:00Z",
+    "end_date": "2026-07-26T00:00:00Z"
+  }
+]
