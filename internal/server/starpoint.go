@@ -44,10 +44,11 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 		trimmedTds[i] = strings.TrimSpace(td)
 	}
 
-	// Skip empty rows, header rows, or summary rows
-	if trimmedTds[2] == "" || strings.HasPrefix(trimmedTds[0], "PROGRAMMES") ||
+	// Skip empty rows, separator rows, header rows, or summary rows
+	if trimmedTds[2] == "" || trimmedTds[2] == ";" ||
+		strings.HasPrefix(trimmedTds[0], "PROGRAMMES") ||
 		strings.Contains(trimmedTds[2], "Cummulative Average") ||
-		strings.Contains(trimmedTds[4], "Total Point") {
+		strings.Contains(trimmedTds[2], "Total Point") {
 		return
 	}
 
@@ -69,11 +70,13 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 		}
 		program.Level = trimmedTds[4]
 
-		points, err := strconv.ParseFloat(trimmedTds[5], 32)
-		if err != nil {
-			logger.Sugar().Warnf("Failed to parse points '%s': %v", trimmedTds[5], err)
-			programPool.Put(program)
-			return
+		var points float64
+		if trimmedTds[5] != "" {
+			var err error
+			points, err = strconv.ParseFloat(trimmedTds[5], 32)
+			if err != nil {
+				logger.Sugar().Warnf("Failed to parse points '%s': %v", trimmedTds[5], err)
+			}
 		}
 		program.Points = float32(points)
 
@@ -92,11 +95,13 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 		}
 		program.Level = trimmedTds[4]
 
-		points, err := strconv.ParseFloat(trimmedTds[5], 32)
-		if err != nil {
-			logger.Sugar().Warnf("Failed to parse points '%s': %v", trimmedTds[5], err)
-			programPool.Put(program)
-			return
+		var points float64
+		if trimmedTds[5] != "" {
+			var err error
+			points, err = strconv.ParseFloat(trimmedTds[5], 32)
+			if err != nil {
+				logger.Sugar().Warnf("Failed to parse points '%s': %v", trimmedTds[5], err)
+			}
 		}
 		program.Points = float32(points)
 
@@ -115,11 +120,13 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 		}
 		program.Level = trimmedTds[4]
 
-		points, err := strconv.ParseFloat(trimmedTds[5], 32)
-		if err != nil {
-			logger.Sugar().Warnf("Failed to parse points '%s': %v", trimmedTds[5], err)
-			programPool.Put(program)
-			return
+		var points float64
+		if trimmedTds[5] != "" {
+			var err error
+			points, err = strconv.ParseFloat(trimmedTds[5], 32)
+			if err != nil {
+				logger.Sugar().Warnf("Failed to parse points '%s': %v", trimmedTds[5], err)
+			}
 		}
 		program.Points = float32(points)
 		logger.Sugar().Debugf("Continuation row (using %s): %s", *lastSession, program.EventName)
