@@ -52,8 +52,6 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 		return
 	}
 
-	logger.Sugar().Debugf("Processing row: %v", trimmedTds)
-
 	program = programPool.Get().(*dtos.StarpointProgram)
 	*program = dtos.StarpointProgram{} // Reset
 
@@ -82,7 +80,6 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 
 		// Update last session for continuation rows
 		*lastSession = program.Session
-		logger.Sugar().Debugf("New session row: %s - %s", program.Session, program.EventName)
 	} else if trimmedTds[1] != "" && trimmedTds[0] == "" {
 		// Row with session but no semester (new session group, continuation)
 		program.Session = trimmedTds[1]
@@ -107,7 +104,6 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 
 		// Update last session
 		*lastSession = program.Session
-		logger.Sugar().Debugf("Session continuation row: %s - %s", program.Session, program.EventName)
 	} else if *lastSession != "" {
 		// Continuation row - no semester or session, use previous session
 		program.Session = *lastSession
@@ -129,7 +125,6 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 			}
 		}
 		program.Points = float32(points)
-		logger.Sugar().Debugf("Continuation row (using %s): %s", *lastSession, program.EventName)
 	} else {
 		logger.Sugar().Warnf("Skipping row with no session context: %v", trimmedTds)
 		programPool.Put(program)
@@ -210,7 +205,6 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 			if strings.Contains(trimmedCell, "Cummulative Average") {
 				if starpoint.CummulativeAverage == 0 {
 					starpoint.CummulativeAverage = getFloatFromString(trimmedCell)
-					logger.Sugar().Debugf("Found Cummulative Average: %f", starpoint.CummulativeAverage)
 				}
 				programTdStringSlicePool.Put(tds)
 				return
@@ -218,7 +212,6 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 			if strings.Contains(trimmedCell, "Total Point") {
 				if starpoint.TotalPoints == 0 {
 					starpoint.TotalPoints = getFloatFromString(trimmedCell)
-					logger.Sugar().Debugf("Found Total Point: %f", starpoint.TotalPoints)
 				}
 				programTdStringSlicePool.Put(tds)
 				return
