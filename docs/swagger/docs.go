@@ -174,6 +174,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/carry-mark": {
+            "get": {
+                "description": "Get continuous assessment marks from i-Ma'luum",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scraper"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key for additional security layer",
+                        "name": "x-gomaluum-key",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ResponseDTO"
+                        }
+                    },
+                    "404": {
+                        "description": "No carry mark data found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.CustomError"
+                        }
+                    }
+                }
+            }
+        },
         "/api/disciplinary": {
             "get": {
                 "description": "Get compound and traffic summon records from i-Ma'luum",
