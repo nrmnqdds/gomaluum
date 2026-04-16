@@ -240,6 +240,33 @@ paths:
             type: string
       tags:
       - download
+  /api/exam-timetable:
+    get:
+      description: Get final exam timetable from i-Ma'luum
+      parameters:
+      - description: API key for additional security layer
+        in: header
+        name: x-gomaluum-key
+        type: string
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ResponseDTO'
+        "404":
+          description: No final exam timetable found
+          schema:
+            $ref: '#/definitions/errors.CustomError'
+      tags:
+      - scraper
   /api/key/generate:
     post:
       consumes:
