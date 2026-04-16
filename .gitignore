@@ -28,7 +28,12 @@ tmp/
 
 # Project build
 main
+gomaluum
 *templ.go
+
+# Development artifacts
+examresult.txt
+docs/superpowers/
 
 # OS X generated file
 .DS_Store

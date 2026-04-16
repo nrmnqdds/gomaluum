@@ -9,7 +9,7 @@ require (
 	github.com/MarceloPetrucio/go-scalar-api-reference v0.0.0-20240521013641-ce5d2efe0e06
 	github.com/PuerkitoBio/goquery v1.10.3
 	github.com/alexliesenfeld/health v0.8.1
-	github.com/bytedance/sonic v1.14.1
+	github.com/bytedance/sonic v1.15.0
 	github.com/cloudflare/cloudflare-go v0.116.0
 	github.com/cristalhq/base64 v0.1.2
 	github.com/go-chi/chi/v5 v5.2.3
@@ -42,7 +42,7 @@ require (
 	github.com/antchfx/xpath v1.3.5 // indirect
 	github.com/bits-and-blooms/bitset v1.24.1 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
-	github.com/bytedance/sonic/loader v0.3.0 // indirect
+	github.com/bytedance/sonic/loader v0.5.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
