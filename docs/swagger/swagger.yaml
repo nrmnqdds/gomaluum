@@ -140,6 +140,60 @@ paths:
             $ref: '#/definitions/dtos.ResponseDTO'
       tags:
       - auth
+  /api/carry-mark:
+    get:
+      description: Get continuous assessment marks from i-Ma'luum
+      parameters:
+      - description: API key for additional security layer
+        in: header
+        name: x-gomaluum-key
+        type: string
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ResponseDTO'
+        "404":
+          description: No carry mark data found
+          schema:
+            $ref: '#/definitions/errors.CustomError'
+      tags:
+      - scraper
+  /api/disciplinary:
+    get:
+      description: Get compound and traffic summon records from i-Ma'luum
+      parameters:
+      - description: API key for additional security layer
+        in: header
+        name: x-gomaluum-key
+        type: string
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ResponseDTO'
+        "404":
+          description: No disciplinary or compound records found
+          schema:
+            $ref: '#/definitions/errors.CustomError'
+      tags:
+      - scraper
   /api/download/exam-slip:
     get:
       description: Get exam slip PDF from i-Ma'luum

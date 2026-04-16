@@ -32,6 +32,7 @@ gomaluum
 *templ.go
 
 # Development artifacts
+carrymark.txt
 examresult.txt
 docs/superpowers/
 
@@ -41,3 +42,9 @@ docs/superpowers/
 *.db
 
 certificates
+
+# Debug/scrape artifacts
+*.txt
+
+# Superpowers planning docs
+docs/superpowers/
