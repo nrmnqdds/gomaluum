@@ -42,6 +42,18 @@ info:
   title: Gomaluum API Server
   version: "2.0"
 paths:
+  /api/academic-calendar:
+    get:
+      description: Get IIUM academic calendar
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ResponseDTO'
+      tags:
+      - academic
   /api/ads:
     get:
       description: Get i-Ma'luum ads
@@ -128,6 +140,33 @@ paths:
             $ref: '#/definitions/dtos.ResponseDTO'
       tags:
       - auth
+  /api/carry-mark:
+    get:
+      description: Get continuous assessment marks from i-Ma'luum
+      parameters:
+      - description: API key for additional security layer
+        in: header
+        name: x-gomaluum-key
+        type: string
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ResponseDTO'
+        "404":
+          description: No carry mark data found
+          schema:
+            $ref: '#/definitions/errors.CustomError'
+      tags:
+      - scraper
   /api/download/exam-slip:
     get:
       description: Get exam slip PDF from i-Ma'luum
