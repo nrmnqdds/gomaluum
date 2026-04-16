@@ -36,3 +36,9 @@ main
 *.db
 
 certificates
+
+# Debug/scrape artifacts
+*.txt
+
+# Superpowers planning docs
+docs/superpowers/

@@ -72,6 +72,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 			r.Get("/schedule", s.ScheduleHandler)
 			r.Get("/result", s.ResultHandler)
 			r.Get("/starpoint", s.StarpointHandler)
+			r.Get("/disciplinary", s.DisciplinaryHandler)
 			r.Get("/logout", s.LogoutHandler)
 
 			r.Route("/download", func(r chi.Router) {
