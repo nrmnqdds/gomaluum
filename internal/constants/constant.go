@@ -13,6 +13,7 @@ const (
 	ImaluumResultPage           = "https://imaluum.iium.edu.my/MyAcademic/result"
 	ImaluumConfirmationSlipPage = "https://imaluum.iium.edu.my/MyAcademic/confirmation-sem"
 	ImaluumExamSlipPage         = "https://imaluum.iium.edu.my/examslip"
+	ImaluumDisciplinaryPage     = "https://imaluum.iium.edu.my/Disciplinary"
 	ImaluumCarryMarkPage        = "https://imaluum.iium.edu.my/MyAcademic/cam"
 	ImaluumStudyPlanPage        = "https://imaluum.iium.edu.my/MyAcademic/studyplan"
 	ImaluumStarpointPage        = "https://imaluum.iium.edu.my/CoCurriculum"
