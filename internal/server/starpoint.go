@@ -126,7 +126,6 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 		}
 		program.Points = float32(points)
 	} else {
-		logger.Sugar().Warnf("Skipping row with no session context: %v", trimmedTds)
 		programPool.Put(program)
 		return
 	}
