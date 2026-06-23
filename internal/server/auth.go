@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -13,6 +12,7 @@ import (
 	"github.com/nrmnqdds/gomaluum/internal/errors"
 	pb "github.com/nrmnqdds/gomaluum/internal/proto"
 	"github.com/nrmnqdds/gomaluum/pkg/apikey"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // @Title LoginHandler
@@ -27,7 +27,7 @@ import (
 func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	ctx := context.Background()
+	ctx := r.Context()
 
 	logger := s.log.GetLogger()
 
@@ -138,10 +138,11 @@ func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	client := &http.Client{
-		Jar: jar,
+		Jar:       jar,
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
 	}
 
-	req, _ := http.NewRequest("GET", constants.ImaluumCasLogoutPage, nil)
+	req, _ := http.NewRequestWithContext(r.Context(), "GET", constants.ImaluumCasLogoutPage, nil)
 	setHeaders(req)
 
 	resp, err := client.Do(req)

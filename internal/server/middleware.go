@@ -49,7 +49,7 @@ func (s *Server) PasetoAuthenticator() func(http.Handler) http.Handler {
 				}
 			}
 
-			token, err := s.DecodePasetoToken(authHeader, userAPIKey)
+			token, err := s.DecodePasetoToken(r.Context(), authHeader, userAPIKey)
 			if err != nil {
 				logger.Sugar().Errorf("Failed to decode token: %v", err)
 

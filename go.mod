@@ -21,6 +21,7 @@ require (
 	github.com/mailru/easyjson v0.9.1
 	github.com/rung/go-safecast v1.0.1
 	github.com/swaggo/swag v1.16.4
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.69.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0
 	go.opentelemetry.io/otel v1.44.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.44.0

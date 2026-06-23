@@ -75,11 +75,9 @@ func (s *Server) GeneratePasetoToken(payload TokenPayload) (string, string, erro
 }
 
 // DecodePasetoToken decodes the given PASETO token and returns the original uia cookie
-func (s *Server) DecodePasetoToken(token, userAPIKey string) (*TokenPayload, error) {
+func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string) (*TokenPayload, error) {
 	parser := paseto.NewParserWithoutExpiryCheck() // Don't use NewParser() which will checks expiry by default
 	logger := s.log.GetLogger()
-
-	ctx := context.Background()
 
 	// Don't throw an error immediately if the token has expired
 	// parser.AddRule(paseto.NotExpired())         // this will fail if the token has expired

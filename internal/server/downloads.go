@@ -26,7 +26,7 @@ func (s *Server) ExamSlipHandler(w http.ResponseWriter, r *http.Request) {
 		client = s.httpClient
 	)
 
-	req, err := http.NewRequest("GET", constants.ImaluumExamSlipPage, nil)
+	req, err := http.NewRequestWithContext(r.Context(), "GET", constants.ImaluumExamSlipPage, nil)
 	if err != nil {
 		log.Printf("Failed to create first request: %v", err)
 		if err := req.Body.Close(); err != nil {
@@ -71,7 +71,7 @@ func (s *Server) StudyPlanHandler(w http.ResponseWriter, r *http.Request) {
 		client = s.httpClient
 	)
 
-	req, err := http.NewRequest("GET", constants.ImaluumStudyPlanPage, nil)
+	req, err := http.NewRequestWithContext(r.Context(), "GET", constants.ImaluumStudyPlanPage, nil)
 	if err != nil {
 		log.Printf("Failed to create first request: %v", err)
 		if err := req.Body.Close(); err != nil {
