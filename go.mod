@@ -19,6 +19,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/lucsky/cuid v1.2.1
 	github.com/mailru/easyjson v0.9.1
+	github.com/riandyrn/otelchi v0.12.3
 	github.com/rung/go-safecast v1.0.1
 	github.com/samber/slog-chi v1.19.1
 	github.com/samber/slog-multi v1.8.0
