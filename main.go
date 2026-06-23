@@ -19,7 +19,6 @@ import (
 	"github.com/nrmnqdds/gomaluum/pkg/logger"
 
 	"github.com/jwalton/gchalk"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	_ "golang.org/x/crypto/x509roots/fallback"
 )
 
@@ -138,13 +137,8 @@ func main() {
 	server.DocsPath = DocsPath
 	httpServer := server.NewServer(port, grpcClient)
 
-	// Wrap the server handler with otelhttp middleware so every request gets a
-	// server span. The second arg is the operation name used as the span prefix.
-	otelServiceName := os.Getenv("OTEL_SERVICE_NAME")
-	if otelServiceName == "" {
-		otelServiceName = "gomaluum"
-	}
-	httpServer.Handler = otelhttp.NewHandler(httpServer.Handler, otelServiceName)
+	// Server-side HTTP spans are created by the otelchi middleware (see
+	// RegisterRoutes), which names them by chi route pattern.
 
 	// Create channels to track server status
 	done := make(chan bool, 1)
