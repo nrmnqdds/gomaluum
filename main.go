@@ -102,6 +102,20 @@ func main() {
 		}
 	}()
 
+	// Initialize the OpenTelemetry LoggerProvider before any logger.New() call
+	// so application logs are exported over OTLP alongside traces.
+	shutdownLogger, err := logger.InitLoggerProvider(context.Background())
+	if err != nil {
+		log.Fatalf("failed to initialize logger provider: %v", err)
+	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownLogger(ctx); err != nil {
+			log.Printf("failed to shut down logger provider: %v", err)
+		}
+	}()
+
 	// Get gRPC service URL from environment
 	grpcServiceURL := os.Getenv("GRPC_SERVICE_URL")
 	if grpcServiceURL == "" {

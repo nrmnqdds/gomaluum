@@ -345,7 +345,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var (
-		logger         = s.log.GetLogger()
+		logger         = s.log
 		cookie         = r.Context().Value(ctxToken).(string)
 		sessionQueries []string
 		sessionNames   []string
@@ -356,7 +356,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		now := time.Now()
 		KLTimezone, err := time.LoadLocation("Asia/Kuala_Lumpur")
 		if err != nil {
-			logger.Sugar().Errorf("Error loading timezone: %v", err)
+			logger.ErrorContext(r.Context(), "Error loading timezone", "error", err)
 			KLTimezone = time.UTC
 		}
 
@@ -544,7 +544,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
-			logger.Sugar().Errorf("Failed to encode response: %v", err)
+			logger.ErrorContext(r.Context(), "Failed to encode response", "error", err)
 			errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 		}
 		return
@@ -567,7 +567,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err := c.Visit(constants.ImaluumSchedulePage); err != nil {
-		logger.Sugar().Errorf("Failed to go to URL: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to go to URL", "error", err)
 		errors.Render(w, r, errors.ErrFailedToGoToURL)
 		return
 	}
@@ -584,7 +584,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(filteredQueries) == 0 {
-		logger.Sugar().Error("No valid sessions found")
+		logger.ErrorContext(r.Context(), "No valid sessions found")
 		errors.Render(w, r, errors.ErrScheduleIsEmpty)
 		return
 	}
@@ -592,13 +592,13 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	// Use worker pool for concurrent processing
 	schedules, err := s.processSchedulesWithWorkerPool(filteredQueries, filteredNames, cookie)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to process schedules: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to process schedules", "error", err)
 		errors.Render(w, r, err)
 		return
 	}
 
 	if len(schedules) == 0 {
-		logger.Sugar().Error("Schedule is empty")
+		logger.ErrorContext(r.Context(), "Schedule is empty")
 		errors.Render(w, r, errors.ErrScheduleIsEmpty)
 		return
 	}
@@ -614,7 +614,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
-		logger.Sugar().Errorf("Failed to encode response: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to encode response", "error", err)
 		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }

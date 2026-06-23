@@ -31,7 +31,7 @@ func (s *Server) UpdateAnalytics(matricNo string) error {
 			DO UPDATE SET timestamp = CURRENT_TIMESTAMP
 		`, matricNo)
 	if err != nil {
-		s.log.GetLogger().Sugar().Errorf("Failed to update analytics for %s: %v", matricNo, err)
+		s.log.Error("Failed to update analytics", "matric_no", matricNo, "error", err)
 		return err
 	}
 
@@ -50,7 +50,7 @@ func (s *Server) GetAnalyticsSummaryHandler(w http.ResponseWriter, r *http.Reque
 
 	// Check if database is available
 	if s.db == nil {
-		s.log.GetLogger().Sugar().Error("Database not available for analytics")
+		s.log.ErrorContext(r.Context(), "Database not available for analytics")
 		errors.Render(w, r, errors.ErrFailedToQueryDB)
 		return
 	}
@@ -66,7 +66,7 @@ GROUP BY level, batch
 ORDER BY level, batch;
 	`)
 	if err != nil {
-		s.log.GetLogger().Sugar().Errorf("Failed to query db: %v", err)
+		s.log.ErrorContext(r.Context(), "Failed to query db", "error", err)
 		errors.Render(w, r, errors.ErrFailedToQueryDB)
 		return
 	}
@@ -79,7 +79,7 @@ ORDER BY level, batch;
 		var batch, count int
 
 		if err := rows.Scan(&level, &batch, &count); err != nil {
-			s.log.GetLogger().Sugar().Errorf("Failed to map db rows: %v", err)
+			s.log.ErrorContext(r.Context(), "Failed to map db rows", "error", err)
 			errors.Render(w, r, errors.ErrFailedToMapDBRows)
 			return
 		}
@@ -110,7 +110,7 @@ ORDER BY level, batch;
 	}
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
-		s.log.GetLogger().Sugar().Errorf("Failed to encode response: %v", err)
+		s.log.ErrorContext(r.Context(), "Failed to encode response", "error", err)
 		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }

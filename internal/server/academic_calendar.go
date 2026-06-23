@@ -37,11 +37,11 @@ type academicCalendarRaw struct {
 func (s *Server) AcademicCalendarHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	logger := s.log.GetLogger()
+	logger := s.log
 
 	var raw []academicCalendarRaw
 	if err := json.Unmarshal(academicCalendarData, &raw); err != nil {
-		logger.Sugar().Errorf("Failed to parse academic calendar data: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to parse academic calendar data", "error", err)
 		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 		return
 	}
@@ -50,13 +50,13 @@ func (s *Server) AcademicCalendarHandler(w http.ResponseWriter, r *http.Request)
 	for _, entry := range raw {
 		startTime, err := time.Parse(time.RFC3339, entry.StartDate)
 		if err != nil {
-			logger.Sugar().Errorf("Failed to parse start_date %q: %v", entry.StartDate, err)
+			logger.ErrorContext(r.Context(), "Failed to parse start_date", "start_date", entry.StartDate, "error", err)
 			errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 			return
 		}
 		endTime, err := time.Parse(time.RFC3339, entry.EndDate)
 		if err != nil {
-			logger.Sugar().Errorf("Failed to parse end_date %q: %v", entry.EndDate, err)
+			logger.ErrorContext(r.Context(), "Failed to parse end_date", "end_date", entry.EndDate, "error", err)
 			errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 			return
 		}
@@ -75,7 +75,7 @@ func (s *Server) AcademicCalendarHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
-		logger.Sugar().Errorf("Failed to encode response: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to encode response", "error", err)
 		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }

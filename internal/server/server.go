@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -62,7 +63,7 @@ func (c *GRPCClient) Close() error {
 }
 
 type Server struct {
-	log          *logger.AppLogger
+	log          *slog.Logger
 	paseto       *paseto.AppPaseto
 	grpc         *GRPCClient
 	httpClient   *http.Client

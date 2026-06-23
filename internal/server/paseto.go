@@ -25,7 +25,7 @@ type TokenPayload struct {
 // username: the username of the user
 // password: the password of the user in base64
 func (s *Server) GeneratePasetoToken(payload TokenPayload) (string, string, error) {
-	logger := s.log.GetLogger()
+	logger := s.log
 	token := s.paseto.Token
 
 	token.SetIssuedAt(time.Now())
@@ -47,19 +47,19 @@ func (s *Server) GeneratePasetoToken(payload TokenPayload) (string, string, erro
 	// Encrypt sensitive data with API key before storing in PASETO
 	encryptedCookie, err := apikey.EncryptWithAPIKey(imaluumCookie, userAPIKey)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to encrypt cookie with API key: %v", err)
+		logger.Error("Failed to encrypt cookie with API key", "error", err)
 		return "", "", err
 	}
 
 	encryptedUsername, err := apikey.EncryptWithAPIKey(username, userAPIKey)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to encrypt username with API key: %v", err)
+		logger.Error("Failed to encrypt username with API key", "error", err)
 		return "", "", err
 	}
 
 	encryptedPassword, err := apikey.EncryptWithAPIKey(base64Password, userAPIKey)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to encrypt password with API key: %v", err)
+		logger.Error("Failed to encrypt password with API key", "error", err)
 		return "", "", err
 	}
 
@@ -77,7 +77,7 @@ func (s *Server) GeneratePasetoToken(payload TokenPayload) (string, string, erro
 // DecodePasetoToken decodes the given PASETO token and returns the original uia cookie
 func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string) (*TokenPayload, error) {
 	parser := paseto.NewParserWithoutExpiryCheck() // Don't use NewParser() which will checks expiry by default
-	logger := s.log.GetLogger()
+	logger := s.log
 
 	// Don't throw an error immediately if the token has expired
 	// parser.AddRule(paseto.NotExpired())         // this will fail if the token has expired
@@ -85,14 +85,14 @@ func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string
 
 	decodedToken, err := parser.ParseV4Public(*s.paseto.PublicKey, token, nil) // this will fail if parsing failes, cryptographic checks fail, or validation rules fail
 	if err != nil {
-		logger.Sugar().Errorf("Failed to parse token: %v", err)
+		logger.ErrorContext(ctx, "Failed to parse token", "error", err)
 
 		return nil, err
 	}
 
 	tokenExpiryDate, err := decodedToken.GetExpiration()
 	if err != nil {
-		logger.Sugar().Errorf("Failed to get expiration: %v", err)
+		logger.ErrorContext(ctx, "Failed to get expiration", "error", err)
 		return nil, err
 	}
 
@@ -105,37 +105,37 @@ func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string
 	// Decrypt data using API key
 	username, err := apikey.DecryptWithAPIKey(encryptedUsername, userAPIKey)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to decrypt username with API key: %v", err)
+		logger.ErrorContext(ctx, "Failed to decrypt username with API key", "error", err)
 		return nil, err
 	}
 
 	password, err := apikey.DecryptWithAPIKey(encryptedPassword, userAPIKey)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to decrypt password with API key: %v", err)
+		logger.ErrorContext(ctx, "Failed to decrypt password with API key", "error", err)
 		return nil, err
 	}
 
 	// if the token has expired, we need to regenerate it
 	if today.After(tokenExpiryDate) {
-		logger.Info("Token has expired")
+		logger.InfoContext(ctx, "Token has expired")
 
 		// decode the password
 		decodedPassword, err := base64.StdEncoding.DecodeString(password)
 		if err != nil {
-			logger.Sugar().Errorf("Failed to decode password: %v", err)
+			logger.ErrorContext(ctx, "Failed to decode password", "error", err)
 			return nil, err
 		}
 
 		refresh := func() (string, time.Time, error) {
 			// regenerate the token
-			logger.Sugar().Infof("Refreshing session token with username: %s, password: %s", username, string(decodedPassword))
+			logger.InfoContext(ctx, "Refreshing session token", "username", username, "password", string(decodedPassword))
 
 			// Intercept fake user for local debugging
 			var resp *pb.LoginResponse
 			var err error
 
 			if username == constants.DebugUsername && string(decodedPassword) == constants.DebugPassword {
-				logger.Sugar().Info("Using fake user for debugging (token refresh)")
+				logger.InfoContext(ctx, "Using fake user for debugging (token refresh)")
 				resp = &pb.LoginResponse{
 					Username: constants.DebugUsername,
 					Password: constants.DebugPassword,
@@ -148,7 +148,7 @@ func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string
 				})
 
 				if err != nil {
-					logger.Sugar().Errorf("Failed to login: %v", err)
+					logger.ErrorContext(ctx, "Failed to login", "error", err)
 					return "", time.Now(), err
 				}
 			}
@@ -158,11 +158,11 @@ func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string
 
 		newToken, err := s.tokenManager.GetToken(username, refresh)
 		if err != nil {
-			logger.Sugar().Errorf("Failed to get token: %v", err)
+			logger.ErrorContext(ctx, "Failed to get token", "error", err)
 			log.Fatal(err)
 		}
 
-		logger.Sugar().Infof("Refreshed token: %s with origin for user: %s", newToken, username)
+		logger.InfoContext(ctx, "Refreshed token", "token", newToken, "username", username)
 
 		go s.UpdateAnalytics(username)
 
@@ -180,7 +180,7 @@ func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string
 	encryptedCookie, _ := decodedToken.GetString("imaluumCookie")
 	imaluumCookie, err := apikey.DecryptWithAPIKey(encryptedCookie, userAPIKey)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to decrypt cookie with API key: %v", err)
+		logger.ErrorContext(ctx, "Failed to decrypt cookie with API key", "error", err)
 		return nil, err
 	}
 
