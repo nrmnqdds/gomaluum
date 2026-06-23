@@ -15,8 +15,10 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/nrmnqdds/gomaluum/internal/server"
+	"github.com/nrmnqdds/gomaluum/pkg/logger"
 
 	"github.com/jwalton/gchalk"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	_ "golang.org/x/crypto/x509roots/fallback"
 )
 
@@ -86,6 +88,20 @@ func main() {
 		log.Println("Running in production mode")
 	}
 
+	// Initialize OpenTelemetry tracing. Reads OTEL_EXPORTER_OTLP_ENDPOINT,
+	// OTEL_EXPORTER_OTLP_HEADERS and OTEL_SERVICE_NAME from the environment.
+	shutdownTracer, err := logger.InitTracer(context.Background())
+	if err != nil {
+		log.Fatalf("failed to initialize tracer: %v", err)
+	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracer(ctx); err != nil {
+			log.Printf("failed to shut down tracer: %v", err)
+		}
+	}()
+
 	// Get gRPC service URL from environment
 	grpcServiceURL := os.Getenv("GRPC_SERVICE_URL")
 	if grpcServiceURL == "" {
@@ -106,6 +122,14 @@ func main() {
 
 	server.DocsPath = DocsPath
 	httpServer := server.NewServer(port, grpcClient)
+
+	// Wrap the server handler with otelhttp middleware so every request gets a
+	// server span. The second arg is the operation name used as the span prefix.
+	otelServiceName := os.Getenv("OTEL_SERVICE_NAME")
+	if otelServiceName == "" {
+		otelServiceName = "gomaluum"
+	}
+	httpServer.Handler = otelhttp.NewHandler(httpServer.Handler, otelServiceName)
 
 	// Create channels to track server status
 	done := make(chan bool, 1)
