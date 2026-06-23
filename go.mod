@@ -20,6 +20,7 @@ require (
 	github.com/lucsky/cuid v1.2.1
 	github.com/mailru/easyjson v0.9.1
 	github.com/rung/go-safecast v1.0.1
+	github.com/samber/slog-chi v1.19.1
 	github.com/samber/slog-multi v1.8.0
 	github.com/swaggo/swag v1.16.4
 	go.opentelemetry.io/contrib/bridges/otelslog v0.19.0

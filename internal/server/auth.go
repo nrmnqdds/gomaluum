@@ -64,7 +64,6 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Get API key from header
 	userAPIKey := r.Header.Get("x-gomaluum-key")
 	if userAPIKey == "" {
-		logger.DebugContext(ctx, "No API key provided in login, using default key")
 		userAPIKey = apikey.DefaultAPIKey
 	} else {
 		// Validate the provided API key format

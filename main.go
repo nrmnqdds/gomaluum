@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -33,7 +34,7 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	// Listen for the interrupt signal.
 	<-ctx.Done()
 
-	log.Println("shutting down gracefully, press Ctrl+C again to force")
+	slog.Info("shutting down gracefully, press Ctrl+C again to force")
 
 	// The context is used to inform the server it has 5 seconds to finish
 	// the request it is currently handling
@@ -41,10 +42,10 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	defer cancel()
 
 	if err := apiServer.Shutdown(ctx); err != nil {
-		log.Printf("HTTP Server forced to shutdown with error: %v", err)
+		slog.Error("HTTP server forced to shutdown", "error", err)
 	}
 
-	log.Println("Server exiting")
+	slog.Info("Server exiting")
 
 	// Notify the main goroutine that the shutdown is complete
 	done <- true
@@ -164,10 +165,12 @@ func main() {
 
 	fmt.Println(gchalk.Yellow("====================================================="))
 	fmt.Println(gchalk.Green(fmt.Sprintf("Connected to gRPC service at %s", grpcServiceURL)))
+	slog.Info("Connected to gRPC service", "url", grpcServiceURL)
 
 	// Start HTTP server
 	go func() {
 		fmt.Println(gchalk.Blue(fmt.Sprintf("HTTP server listening on :%d", port)))
+		slog.Info("HTTP server listening", "port", port)
 		httpReady <- true
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			panic(fmt.Sprintf("http server error: %s", err))
@@ -185,5 +188,5 @@ func main() {
 
 	// Wait for the graceful shutdown to complete
 	<-done
-	log.Println("Graceful shutdown complete.")
+	slog.Info("Graceful shutdown complete")
 }

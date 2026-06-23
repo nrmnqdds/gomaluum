@@ -2,18 +2,33 @@ package server
 
 import (
 	"embed"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	slogchi "github.com/samber/slog-chi"
 )
 
 var DocsPath embed.FS
 
 func (s *Server) RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+
+	// Structured access logging with trace/span correlation. Health checks are
+	// filtered out to avoid probe noise.
+	r.Use(slogchi.NewWithConfig(s.log, slogchi.Config{
+		DefaultLevel:     slog.LevelInfo,
+		ClientErrorLevel: slog.LevelWarn,
+		ServerErrorLevel: slog.LevelError,
+		WithRequestID:    true,
+		WithSpanID:       true,
+		WithTraceID:      true,
+		Filters: []slogchi.Filter{
+			slogchi.IgnorePath("/health"),
+		},
+	}))
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},

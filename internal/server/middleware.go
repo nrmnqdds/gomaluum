@@ -37,7 +37,6 @@ func (s *Server) PasetoAuthenticator() func(http.Handler) http.Handler {
 			// Get API key from header
 			userAPIKey := r.Header.Get("x-gomaluum-key")
 			if userAPIKey == "" {
-				logger.DebugContext(r.Context(), "No API key provided, using default key")
 				userAPIKey = apikey.DefaultAPIKey
 			} else {
 				// Validate the provided API key format

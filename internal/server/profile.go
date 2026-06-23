@@ -26,7 +26,7 @@ func (s *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 
 	profile, err := s.Profile(r.Context(), cookie)
 	if err != nil {
-		logger.ErrorContext(r.Context(), "Failed to get profile", "error", err)
+		// Profile already logs the specific failure cause.
 		errors.Render(w, r, err)
 		return
 	}

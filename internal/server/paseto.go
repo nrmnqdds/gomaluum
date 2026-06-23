@@ -117,7 +117,7 @@ func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string
 
 	// if the token has expired, we need to regenerate it
 	if today.After(tokenExpiryDate) {
-		logger.InfoContext(ctx, "Token has expired")
+		logger.DebugContext(ctx, "Token has expired")
 
 		// decode the password
 		decodedPassword, err := base64.StdEncoding.DecodeString(password)
@@ -128,7 +128,7 @@ func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string
 
 		refresh := func() (string, time.Time, error) {
 			// regenerate the token
-			logger.InfoContext(ctx, "Refreshing session token", "username", username, "password", string(decodedPassword))
+			logger.DebugContext(ctx, "Refreshing session token", "username", username)
 
 			// Intercept fake user for local debugging
 			var resp *pb.LoginResponse
@@ -162,7 +162,7 @@ func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string
 			log.Fatal(err)
 		}
 
-		logger.InfoContext(ctx, "Refreshed token", "token", newToken, "username", username)
+		logger.DebugContext(ctx, "Refreshed token", "username", username)
 
 		go s.UpdateAnalytics(username)
 
