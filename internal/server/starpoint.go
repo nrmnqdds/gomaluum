@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,7 +15,6 @@ import (
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
-	"go.uber.org/zap"
 )
 
 // Object pools for memory reuse
@@ -31,7 +31,7 @@ var programTdStringSlicePool = sync.Pool{
 }
 
 // Parse table row with object pooling
-func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.Mutex, lastSession *string, logger *zap.Logger) {
+func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.Mutex, lastSession *string, logger *slog.Logger) {
 	if len(tds) != 6 {
 		return
 	}
@@ -73,7 +73,7 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 			var err error
 			points, err = strconv.ParseFloat(trimmedTds[5], 32)
 			if err != nil {
-				logger.Sugar().Warnf("Failed to parse points '%s': %v", trimmedTds[5], err)
+				logger.Warn("Failed to parse points", "points", trimmedTds[5], "error", err)
 			}
 		}
 		program.Points = float32(points)
@@ -97,7 +97,7 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 			var err error
 			points, err = strconv.ParseFloat(trimmedTds[5], 32)
 			if err != nil {
-				logger.Sugar().Warnf("Failed to parse points '%s': %v", trimmedTds[5], err)
+				logger.Warn("Failed to parse points", "points", trimmedTds[5], "error", err)
 			}
 		}
 		program.Points = float32(points)
@@ -121,7 +121,7 @@ func parseProgramRows(tds []string, programs *[]dtos.StarpointProgram, mu *sync.
 			var err error
 			points, err = strconv.ParseFloat(trimmedTds[5], 32)
 			if err != nil {
-				logger.Sugar().Warnf("Failed to parse points '%s': %v", trimmedTds[5], err)
+				logger.Warn("Failed to parse points", "points", trimmedTds[5], "error", err)
 			}
 		}
 		program.Points = float32(points)
@@ -164,7 +164,7 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var (
-		logger      = s.log.GetLogger()
+		logger      = s.log
 		cookie      = r.Context().Value(ctxToken).(string)
 		mu          sync.Mutex
 		programs    []dtos.StarpointProgram
@@ -223,13 +223,13 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err := c.Visit(constants.ImaluumStarpointPage); err != nil {
-		logger.Sugar().Errorf("Failed to go to URL: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to go to URL", "error", err)
 		errors.Render(w, r, errors.ErrFailedToGoToURL)
 		return
 	}
 
 	if len(programs) == 0 {
-		logger.Sugar().Error("Program is empty")
+		logger.ErrorContext(r.Context(), "Program is empty")
 		errors.Render(w, r, errors.ErrNoStarpoint)
 		return
 	}
@@ -244,7 +244,7 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
-		logger.Sugar().Errorf("Failed to encode response: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to encode response", "error", err)
 		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }

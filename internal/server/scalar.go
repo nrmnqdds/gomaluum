@@ -9,15 +9,19 @@ import (
 
 func (s *Server) ScalarReference(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
-	logger := s.log.GetLogger()
+	logger := s.log
 
 	swaggerContent, err := DocsPath.ReadFile("docs/swagger/swagger.json")
 	if err != nil {
-		logger.Sugar().Fatalf("could not read swagger.json: %v", err)
+		logger.ErrorContext(r.Context(), "could not read swagger.json", "error", err)
+		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
+		return
 	}
 	customCSS, err := DocsPath.ReadFile("docs/swagger/flytheme.css")
 	if err != nil {
-		logger.Sugar().Fatalf("could not read flytheme.css: %v", err)
+		logger.ErrorContext(r.Context(), "could not read flytheme.css", "error", err)
+		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
+		return
 	}
 
 	htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
@@ -29,7 +33,7 @@ func (s *Server) ScalarReference(w http.ResponseWriter, r *http.Request) {
 		CustomCss: string(customCSS),
 	})
 	if err != nil {
-		logger.Sugar().Errorf("%v", err)
+		logger.ErrorContext(r.Context(), "Failed to render API reference HTML", "error", err)
 		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 

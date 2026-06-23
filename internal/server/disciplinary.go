@@ -81,7 +81,7 @@ func (s *Server) DisciplinaryHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var (
-		logger    = s.log.GetLogger()
+		logger    = s.log
 		cookie    = r.Context().Value(ctxToken).(string)
 		mu        sync.Mutex
 		compounds []dtos.DisciplinaryCompound
@@ -120,13 +120,13 @@ func (s *Server) DisciplinaryHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err := c.Visit(constants.ImaluumDisciplinaryPage); err != nil {
-		logger.Sugar().Errorf("Failed to go to URL: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to go to URL", "error", err)
 		errors.Render(w, r, errors.ErrFailedToGoToURL)
 		return
 	}
 
 	if len(compounds) == 0 {
-		logger.Sugar().Error("No disciplinary or compound records found")
+		logger.ErrorContext(r.Context(), "No disciplinary or compound records found")
 		errors.Render(w, r, errors.ErrNoDisciplinaryRecord)
 		return
 	}
@@ -142,7 +142,7 @@ func (s *Server) DisciplinaryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
-		logger.Sugar().Errorf("Failed to encode response: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to encode response", "error", err)
 		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }

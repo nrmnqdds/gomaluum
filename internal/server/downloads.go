@@ -21,12 +21,12 @@ func (s *Server) ExamSlipHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/pdf")
 
 	var (
-		logger = s.log.GetLogger()
+		logger = s.log
 		cookie = r.Context().Value(ctxToken).(string)
 		client = s.httpClient
 	)
 
-	req, err := http.NewRequest("GET", constants.ImaluumExamSlipPage, nil)
+	req, err := http.NewRequestWithContext(r.Context(), "GET", constants.ImaluumExamSlipPage, nil)
 	if err != nil {
 		log.Printf("Failed to create first request: %v", err)
 		if err := req.Body.Close(); err != nil {
@@ -40,7 +40,7 @@ func (s *Server) ExamSlipHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to do request: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to do request", "error", err)
 		errors.Render(w, r, errors.ErrURLParseFailed)
 		return
 	}
@@ -48,7 +48,7 @@ func (s *Server) ExamSlipHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Stream to response
 	if _, err := io.Copy(w, resp.Body); err != nil {
-		logger.Sugar().Errorf("Failed to copy response body: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to copy response body", "error", err)
 		errors.Render(w, r, errors.ErrDownloadFailed)
 		return
 	}
@@ -66,12 +66,12 @@ func (s *Server) StudyPlanHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/pdf")
 
 	var (
-		logger = s.log.GetLogger()
+		logger = s.log
 		cookie = r.Context().Value(ctxToken).(string)
 		client = s.httpClient
 	)
 
-	req, err := http.NewRequest("GET", constants.ImaluumStudyPlanPage, nil)
+	req, err := http.NewRequestWithContext(r.Context(), "GET", constants.ImaluumStudyPlanPage, nil)
 	if err != nil {
 		log.Printf("Failed to create first request: %v", err)
 		if err := req.Body.Close(); err != nil {
@@ -85,7 +85,7 @@ func (s *Server) StudyPlanHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to do request: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to do request", "error", err)
 		errors.Render(w, r, errors.ErrURLParseFailed)
 		return
 	}
@@ -93,7 +93,7 @@ func (s *Server) StudyPlanHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Stream to response
 	if _, err := io.Copy(w, resp.Body); err != nil {
-		logger.Sugar().Errorf("Failed to copy response body: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to copy response body", "error", err)
 		errors.Render(w, r, errors.ErrDownloadFailed)
 		return
 	}

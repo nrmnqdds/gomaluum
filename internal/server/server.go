@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -14,6 +15,8 @@ import (
 	"github.com/nrmnqdds/gomaluum/pkg/logger"
 	"github.com/nrmnqdds/gomaluum/pkg/paseto"
 	"github.com/nrmnqdds/gomaluum/pkg/sf"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -34,8 +37,12 @@ type GRPCClient struct {
 }
 
 func NewGRPCClient(serviceURL string) (*GRPCClient, error) {
-	// Connect to the external gRPC service
-	conn, err := grpc.Dial(serviceURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// Connect to the external gRPC service. The OTel stats handler creates a
+	// client span per RPC and propagates the trace context to the server.
+	conn, err := grpc.Dial(serviceURL,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to gRPC service at %s: %w", serviceURL, err)
 	}
@@ -56,7 +63,7 @@ func (c *GRPCClient) Close() error {
 }
 
 type Server struct {
-	log          *logger.AppLogger
+	log          *slog.Logger
 	paseto       *paseto.AppPaseto
 	grpc         *GRPCClient
 	httpClient   *http.Client
@@ -168,9 +175,10 @@ func createHTTPClient() (*http.Client, error) {
 		},
 	}
 
-	// Return a client with the custom transport
+	// Wrap the transport with otelhttp so outgoing requests become child spans
+	// and the W3C trace context is injected into request headers.
 	return &http.Client{
-		Transport: transport,
+		Transport: otelhttp.NewTransport(transport),
 		Timeout:   30 * time.Second,
 	}, nil
 }

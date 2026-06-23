@@ -20,13 +20,13 @@ func (s *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var (
-		logger = s.log.GetLogger()
+		logger = s.log
 		cookie = r.Context().Value(ctxToken).(string)
 	)
 
-	profile, err := s.Profile(cookie)
+	profile, err := s.Profile(r.Context(), cookie)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to get profile: %v", err)
+		// Profile already logs the specific failure cause.
 		errors.Render(w, r, err)
 		return
 	}
@@ -37,7 +37,7 @@ func (s *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
-		logger.Sugar().Errorf("Failed to encode response: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to encode response", "error", err)
 		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }

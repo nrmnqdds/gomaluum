@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -13,6 +12,7 @@ import (
 	"github.com/nrmnqdds/gomaluum/internal/errors"
 	pb "github.com/nrmnqdds/gomaluum/internal/proto"
 	"github.com/nrmnqdds/gomaluum/pkg/apikey"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // @Title LoginHandler
@@ -27,15 +27,15 @@ import (
 func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	ctx := context.Background()
+	ctx := r.Context()
 
-	logger := s.log.GetLogger()
+	logger := s.log
 
 	user := &pb.LoginRequest{}
 
 	// Bind the request body to the user struct
 	if err := easyjson.UnmarshalFromReader(r.Body, user); err != nil {
-		logger.Sugar().Errorf("Failed to decode request body: %v", err)
+		logger.ErrorContext(ctx, "Failed to decode request body", "error", err)
 		errors.Render(w, r, errors.ErrInvalidRequest)
 		return
 	}
@@ -45,7 +45,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if user.Username == constants.DebugUsername && user.Password == constants.DebugPassword {
-		logger.Sugar().Info("Using fake user for debugging")
+		logger.InfoContext(ctx, "Using fake user for debugging")
 		resp = &pb.LoginResponse{
 			Username: constants.DebugUsername,
 			Password: constants.DebugPassword,
@@ -55,7 +55,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		// Call the Login method from the external GRPC service
 		resp, err = s.grpc.client.Login(ctx, user)
 		if err != nil {
-			logger.Sugar().Errorf("Login failed: %v", err)
+			logger.ErrorContext(ctx, "Login failed", "error", err)
 			errors.Render(w, r, errors.ErrLoginFailed)
 			return
 		}
@@ -64,12 +64,11 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Get API key from header
 	userAPIKey := r.Header.Get("x-gomaluum-key")
 	if userAPIKey == "" {
-		logger.Sugar().Debug("No API key provided in login, using default key")
 		userAPIKey = apikey.DefaultAPIKey
 	} else {
 		// Validate the provided API key format
 		if !apikey.ValidateAPIKey(userAPIKey) {
-			logger.Sugar().Warn("Invalid API key format provided in login")
+			logger.WarnContext(ctx, "Invalid API key format provided in login")
 			errors.Render(w, r, errors.ErrInvalidAPIKey)
 			return
 		}
@@ -85,7 +84,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Generate a new PASETO token
 	newCookie, _, err := s.GeneratePasetoToken(payload)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to generate PASETO token: %v", err)
+		logger.ErrorContext(ctx, "Failed to generate PASETO token", "error", err)
 		errors.Render(w, r, errors.ErrFailedToDecodePASETO)
 		return
 	}
@@ -101,7 +100,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
-		logger.Sugar().Errorf("Failed to encode response: %v", err)
+		logger.ErrorContext(ctx, "Failed to encode response", "error", err)
 		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }
@@ -118,7 +117,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	logger := s.log.GetLogger()
+	logger := s.log
 
 	jar, _ := cookiejar.New(nil)
 
@@ -138,10 +137,11 @@ func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	client := &http.Client{
-		Jar: jar,
+		Jar:       jar,
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
 	}
 
-	req, _ := http.NewRequest("GET", constants.ImaluumCasLogoutPage, nil)
+	req, _ := http.NewRequestWithContext(r.Context(), "GET", constants.ImaluumCasLogoutPage, nil)
 	setHeaders(req)
 
 	resp, err := client.Do(req)
@@ -157,7 +157,7 @@ func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
-		logger.Sugar().Errorf("Failed to encode response: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to encode response", "error", err)
 		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }

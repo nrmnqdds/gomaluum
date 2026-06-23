@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"strings"
 	"sync"
 
@@ -138,8 +139,8 @@ func extractProfileData(e *colly.HTMLElement) *profileData {
 	return data
 }
 
-func (s *Server) Profile(cookie string) (*dtos.Profile, error) {
-	logger := s.log.GetLogger()
+func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, error) {
+	logger := s.log
 
 	// Return fake data for fake user
 	if cookie == constants.DebugUserCookie {
@@ -193,12 +194,12 @@ func (s *Server) Profile(cookie string) (*dtos.Profile, error) {
 	})
 
 	if err := c.Visit(constants.ImaluumProfilePage); err != nil {
-		logger.Sugar().Errorf("Failed to go to URL: %v", err)
+		logger.ErrorContext(ctx, "Failed to go to URL", "error", err)
 		return nil, errors.ErrFailedToGoToURL
 	}
 
 	if profileResult == nil {
-		logger.Sugar().Error("Failed to extract profile data")
+		logger.ErrorContext(ctx, "Failed to extract profile data")
 		return nil, errors.ErrFailedToGoToURL
 	}
 

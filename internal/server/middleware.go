@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/nrmnqdds/gomaluum/pkg/apikey"
@@ -15,7 +14,7 @@ const (
 )
 
 func (s *Server) PasetoAuthenticator() func(http.Handler) http.Handler {
-	logger := s.log.GetLogger()
+	logger := s.log
 	return func(next http.Handler) http.Handler {
 		hfn := func(w http.ResponseWriter, r *http.Request) {
 			fullAuthHeader := r.Header.Get("Authorization")
@@ -28,7 +27,7 @@ func (s *Server) PasetoAuthenticator() func(http.Handler) http.Handler {
 			}
 
 			if fullAuthHeader == "" || len(fullAuthHeader) < 7 || fullAuthHeader[:7] != "Bearer " {
-				logger.Sugar().Warn("Authorization header is missing or invalid")
+				logger.WarnContext(r.Context(), "Authorization header is missing or invalid")
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
@@ -38,32 +37,31 @@ func (s *Server) PasetoAuthenticator() func(http.Handler) http.Handler {
 			// Get API key from header
 			userAPIKey := r.Header.Get("x-gomaluum-key")
 			if userAPIKey == "" {
-				logger.Sugar().Debug("No API key provided, using default key")
 				userAPIKey = apikey.DefaultAPIKey
 			} else {
 				// Validate the provided API key format
 				if !apikey.ValidateAPIKey(userAPIKey) {
-					logger.Sugar().Warn("Invalid API key format")
+					logger.WarnContext(r.Context(), "Invalid API key format")
 					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 					return
 				}
 			}
 
-			token, err := s.DecodePasetoToken(authHeader, userAPIKey)
+			token, err := s.DecodePasetoToken(r.Context(), authHeader, userAPIKey)
 			if err != nil {
-				logger.Sugar().Errorf("Failed to decode token: %v", err)
+				logger.ErrorContext(r.Context(), "Failed to decode token", "error", err)
 
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
 
 			if token == nil {
-				logger.Sugar().Warn("Token is empty")
+				logger.WarnContext(r.Context(), "Token is empty")
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
 
-			logger.Sugar().Debugf("Token is authenticated: %v", fmt.Sprintf("MOD_AUTH_CAS=%s", token.imaluumCookie))
+			logger.DebugContext(r.Context(), "Token is authenticated", "cookie", "MOD_AUTH_CAS="+token.imaluumCookie)
 
 			// Create a new context from the request context and add the token to it
 			ctx := context.WithValue(r.Context(), ctxToken, token.imaluumCookie)

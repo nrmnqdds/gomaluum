@@ -73,7 +73,7 @@ func (s *Server) FinalExamHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var (
-		logger = s.log.GetLogger()
+		logger = s.log
 		cookie = r.Context().Value(ctxToken).(string)
 		mu     sync.Mutex
 		exams  []dtos.FinalExamItem
@@ -108,13 +108,13 @@ func (s *Server) FinalExamHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err := c.Visit(constants.ImaluumFinalExamPage); err != nil {
-		logger.Sugar().Errorf("Failed to go to URL: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to go to URL", "error", err)
 		errors.Render(w, r, errors.ErrFailedToGoToURL)
 		return
 	}
 
 	if len(exams) == 0 {
-		logger.Sugar().Error("Final exam timetable is empty")
+		logger.ErrorContext(r.Context(), "Final exam timetable is empty")
 		errors.Render(w, r, errors.ErrNoFinalExam)
 		return
 	}
@@ -130,7 +130,7 @@ func (s *Server) FinalExamHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := sonic.ConfigFastest.NewEncoder(w).Encode(response); err != nil {
-		logger.Sugar().Errorf("Failed to encode response: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to encode response", "error", err)
 		errors.Render(w, r, errors.ErrFailedToEncodeResponse)
 	}
 }

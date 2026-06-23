@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,8 +16,10 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/nrmnqdds/gomaluum/internal/server"
+	"github.com/nrmnqdds/gomaluum/pkg/logger"
 
 	"github.com/jwalton/gchalk"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	_ "golang.org/x/crypto/x509roots/fallback"
 )
 
@@ -31,7 +34,7 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	// Listen for the interrupt signal.
 	<-ctx.Done()
 
-	log.Println("shutting down gracefully, press Ctrl+C again to force")
+	slog.Info("shutting down gracefully, press Ctrl+C again to force")
 
 	// The context is used to inform the server it has 5 seconds to finish
 	// the request it is currently handling
@@ -39,10 +42,10 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	defer cancel()
 
 	if err := apiServer.Shutdown(ctx); err != nil {
-		log.Printf("HTTP Server forced to shutdown with error: %v", err)
+		slog.Error("HTTP server forced to shutdown", "error", err)
 	}
 
-	log.Println("Server exiting")
+	slog.Info("Server exiting")
 
 	// Notify the main goroutine that the shutdown is complete
 	done <- true
@@ -86,6 +89,34 @@ func main() {
 		log.Println("Running in production mode")
 	}
 
+	// Initialize OpenTelemetry tracing. Reads OTEL_EXPORTER_OTLP_ENDPOINT,
+	// OTEL_EXPORTER_OTLP_HEADERS and OTEL_SERVICE_NAME from the environment.
+	shutdownTracer, err := logger.InitTracer(context.Background())
+	if err != nil {
+		log.Fatalf("failed to initialize tracer: %v", err)
+	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracer(ctx); err != nil {
+			log.Printf("failed to shut down tracer: %v", err)
+		}
+	}()
+
+	// Initialize the OpenTelemetry LoggerProvider before any logger.New() call
+	// so application logs are exported over OTLP alongside traces.
+	shutdownLogger, err := logger.InitLoggerProvider(context.Background())
+	if err != nil {
+		log.Fatalf("failed to initialize logger provider: %v", err)
+	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownLogger(ctx); err != nil {
+			log.Printf("failed to shut down logger provider: %v", err)
+		}
+	}()
+
 	// Get gRPC service URL from environment
 	grpcServiceURL := os.Getenv("GRPC_SERVICE_URL")
 	if grpcServiceURL == "" {
@@ -107,6 +138,14 @@ func main() {
 	server.DocsPath = DocsPath
 	httpServer := server.NewServer(port, grpcClient)
 
+	// Wrap the server handler with otelhttp middleware so every request gets a
+	// server span. The second arg is the operation name used as the span prefix.
+	otelServiceName := os.Getenv("OTEL_SERVICE_NAME")
+	if otelServiceName == "" {
+		otelServiceName = "gomaluum"
+	}
+	httpServer.Handler = otelhttp.NewHandler(httpServer.Handler, otelServiceName)
+
 	// Create channels to track server status
 	done := make(chan bool, 1)
 	httpReady := make(chan bool, 1)
@@ -126,10 +165,12 @@ func main() {
 
 	fmt.Println(gchalk.Yellow("====================================================="))
 	fmt.Println(gchalk.Green(fmt.Sprintf("Connected to gRPC service at %s", grpcServiceURL)))
+	slog.Info("Connected to gRPC service", "url", grpcServiceURL)
 
 	// Start HTTP server
 	go func() {
 		fmt.Println(gchalk.Blue(fmt.Sprintf("HTTP server listening on :%d", port)))
+		slog.Info("HTTP server listening", "port", port)
 		httpReady <- true
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			panic(fmt.Sprintf("http server error: %s", err))
@@ -147,5 +188,5 @@ func main() {
 
 	// Wait for the graceful shutdown to complete
 	<-done
-	log.Println("Graceful shutdown complete.")
+	slog.Info("Graceful shutdown complete")
 }

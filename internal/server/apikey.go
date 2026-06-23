@@ -25,12 +25,12 @@ type APIKeyResponse struct {
 // @Failure 500 {object} errors.CustomError
 // @Router /api/key/generate [post]
 func (s *Server) GenerateAPIKeyHandler(w http.ResponseWriter, r *http.Request) {
-	logger := s.log.GetLogger()
+	logger := s.log
 
 	// Generate a new API key
 	newAPIKey, err := apikey.GenerateTimestampedAPIKey()
 	if err != nil {
-		logger.Sugar().Errorf("Failed to generate API key: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to generate API key", "error", err)
 		errors.Render(w, r, errors.ErrFailedToGenerateAPIKey)
 		return
 	}
@@ -45,10 +45,10 @@ func (s *Server) GenerateAPIKeyHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		logger.Sugar().Errorf("Failed to encode response: %v", err)
+		logger.ErrorContext(r.Context(), "Failed to encode response", "error", err)
 		errors.Render(w, r, errors.ErrFailedToGenerateAPIKey)
 		return
 	}
 
-	logger.Sugar().Infof("Generated new API key: %s", newAPIKey[:10]+"...") // Log only first 10 chars for security
+	logger.InfoContext(r.Context(), "Generated new API key", "key_prefix", newAPIKey[:10]+"...") // Log only first 10 chars for security
 }
