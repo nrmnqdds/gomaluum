@@ -20,6 +20,12 @@ type TokenPayload struct {
 	apiKey        string
 }
 
+// imaluumSessionTTL is how long a fetched i-Ma'luum session cookie is reused
+// (cached in the TokenManager) before we re-authenticate. It must stay safely
+// below i-Ma'luum's own session timeout, otherwise a cached cookie can go stale
+// and requests fail until the entry expires.
+const imaluumSessionTTL = 30 * time.Minute
+
 // GeneratePasetoToken generates a PASETO token for the given original uia cookie
 // origin: the original uia cookie
 // username: the username of the user
@@ -153,7 +159,7 @@ func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string
 				}
 			}
 
-			return resp.Token, time.Now(), nil
+			return resp.Token, time.Now().Add(imaluumSessionTTL), nil
 		}
 
 		newToken, err := s.tokenManager.GetToken(username, refresh)
