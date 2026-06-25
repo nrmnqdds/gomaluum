@@ -51,7 +51,10 @@ func runWithRetry(
 // scrapeWithRetry wires runWithRetry to the request's session: it supplies the
 // current cookie and a refresh that evicts + re-logins the session.
 func (s *Server) scrapeWithRetry(ctx context.Context, fn func(cookie string) (bool, error)) error {
-	sess := ctx.Value(ctxSession).(*TokenPayload)
+	sess, ok := ctx.Value(ctxSession).(*TokenPayload)
+	if !ok || sess == nil {
+		return errors.ErrInvalidToken
+	}
 	return runWithRetry(
 		sess.imaluumCookie,
 		func() (string, error) { return s.refreshSession(ctx, sess.username, sess.password) },

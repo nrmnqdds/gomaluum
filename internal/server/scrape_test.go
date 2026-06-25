@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -66,4 +67,15 @@ func TestRunWithRetry(t *testing.T) {
 		)
 		require.ErrorIs(t, err, boom)
 	})
+}
+
+func TestScrapeWithRetry_MissingSession(t *testing.T) {
+	s := &Server{}
+	called := false
+	err := s.scrapeWithRetry(context.Background(), func(string) (bool, error) {
+		called = true
+		return false, nil
+	})
+	require.ErrorIs(t, err, apperrors.ErrInvalidToken)
+	require.False(t, called)
 }
