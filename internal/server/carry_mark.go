@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/bytedance/sonic"
@@ -49,84 +50,95 @@ func (s *Server) CarryMarkHandler(w http.ResponseWriter, r *http.Request) {
 
 	var (
 		logger         = s.log
-		cookie         = r.Context().Value(ctxToken).(string)
 		mu             sync.Mutex
 		subjects       []dtos.CarryMarkSubject
 		currentSubject *dtos.CarryMarkSubject
 		session        string
 	)
 
-	cookieStr := "MOD_AUTH_CAS=" + cookie
-
 	// NOTE: currentSubject pointer tracking relies on synchronous callback execution.
 	// Do NOT add colly.Async() — it would invalidate the pointer after slice reallocation.
-	c := colly.NewCollector()
-	c.WithTransport(s.httpClient.Transport)
+	if err := s.scrapeWithRetry(r.Context(), func(cookie string) (bool, error) {
+		// Reset accumulators so a retry starts clean.
+		mu.Lock()
+		subjects = subjects[:0]
+		currentSubject = nil
+		session = ""
+		mu.Unlock()
 
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("Cookie", cookieStr)
-		r.Headers.Set("User-Agent", cuid.New())
-	})
+		var stale atomic.Bool
+		c := colly.NewCollector()
+		c.WithTransport(s.httpClient.Transport)
+		detectStale(c, &stale)
 
-	c.OnHTML("script", func(e *colly.HTMLElement) {
-		content := strings.TrimSpace(e.Text)
-		if strings.Contains(content, "console.log") {
-			mu.Lock()
-			if session == "" {
-				session = extractSession(content)
-			}
-			mu.Unlock()
-		}
-	})
-
-	c.OnHTML("table.table.table-hover tbody tr", func(e *colly.HTMLElement) {
-		cells := e.DOM.Find("td")
-		if cells.Length() < 6 {
-			return
-		}
-
-		tds := carryMarkTdPool.Get().([]string)
-		tds = tds[:0]
-
-		cells.Each(func(_ int, s *goquery.Selection) {
-			tds = append(tds, strings.TrimSpace(s.Text()))
+		c.OnRequest(func(r *colly.Request) {
+			r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
+			r.Headers.Set("User-Agent", cuid.New())
 		})
 
-		code := tds[0]
-		name := tds[2]
+		c.OnHTML("script", func(e *colly.HTMLElement) {
+			content := strings.TrimSpace(e.Text)
+			if strings.Contains(content, "console.log") {
+				mu.Lock()
+				if session == "" {
+					session = extractSession(content)
+				}
+				mu.Unlock()
+			}
+		})
 
-		if code != "" {
-			subject := dtos.CarryMarkSubject{
-				ID:             fmt.Sprintf("gomaluum:carry-mark-subject:%s", cuid.Slug()),
-				Code:           code,
-				Section:        tds[1],
-				Course:         tds[2],
-				CreditHour:     tds[3],
-				TotalCarryMark: tds[4],
-				Components:     []dtos.CarryMarkComponent{},
+		c.OnHTML("table.table.table-hover tbody tr", func(e *colly.HTMLElement) {
+			cells := e.DOM.Find("td")
+			if cells.Length() < 6 {
+				return
 			}
-			mu.Lock()
-			subjects = append(subjects, subject)
-			currentSubject = &subjects[len(subjects)-1]
-			mu.Unlock()
-		} else if name != "" && currentSubject != nil {
-			component := dtos.CarryMarkComponent{
-				ID:           fmt.Sprintf("gomaluum:carry-mark-component:%s", cuid.Slug()),
-				Name:         name,
-				MarkingScore: tds[3],
-				ActualScore:  tds[4],
+
+			tds := carryMarkTdPool.Get().([]string)
+			tds = tds[:0]
+
+			cells.Each(func(_ int, s *goquery.Selection) {
+				tds = append(tds, strings.TrimSpace(s.Text()))
+			})
+
+			code := tds[0]
+			name := tds[2]
+
+			if code != "" {
+				subject := dtos.CarryMarkSubject{
+					ID:             fmt.Sprintf("gomaluum:carry-mark-subject:%s", cuid.Slug()),
+					Code:           code,
+					Section:        tds[1],
+					Course:         tds[2],
+					CreditHour:     tds[3],
+					TotalCarryMark: tds[4],
+					Components:     []dtos.CarryMarkComponent{},
+				}
+				mu.Lock()
+				subjects = append(subjects, subject)
+				currentSubject = &subjects[len(subjects)-1]
+				mu.Unlock()
+			} else if name != "" && currentSubject != nil {
+				component := dtos.CarryMarkComponent{
+					ID:           fmt.Sprintf("gomaluum:carry-mark-component:%s", cuid.Slug()),
+					Name:         name,
+					MarkingScore: tds[3],
+					ActualScore:  tds[4],
+				}
+				mu.Lock()
+				currentSubject.Components = append(currentSubject.Components, component)
+				mu.Unlock()
 			}
-			mu.Lock()
-			currentSubject.Components = append(currentSubject.Components, component)
-			mu.Unlock()
+
+			carryMarkTdPool.Put(tds)
+		})
+
+		if err := c.Visit(constants.ImaluumCarryMarkPage); err != nil {
+			return false, errors.ErrFailedToGoToURL
 		}
-
-		carryMarkTdPool.Put(tds)
-	})
-
-	if err := c.Visit(constants.ImaluumCarryMarkPage); err != nil {
-		logger.ErrorContext(r.Context(), "Failed to go to URL", "error", err)
-		errors.Render(w, r, errors.ErrFailedToGoToURL)
+		return stale.Load(), nil
+	}); err != nil {
+		logger.ErrorContext(r.Context(), "Failed to scrape carry marks", "error", err)
+		errors.Render(w, r, err)
 		return
 	}
 
