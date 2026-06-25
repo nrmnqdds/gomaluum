@@ -70,3 +70,10 @@ func (tm *TokenManager) GetToken(
 	}
 	return v.(string), nil
 }
+
+// Invalidate removes a cached token so the next GetToken re-runs refreshFunc.
+func (tm *TokenManager) Invalidate(matric string) {
+	tm.mu.Lock()
+	delete(tm.tokens, matric)
+	tm.mu.Unlock()
+}
