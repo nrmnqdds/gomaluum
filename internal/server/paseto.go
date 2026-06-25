@@ -131,35 +131,7 @@ func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string
 			return nil, err
 		}
 
-		refresh := func() (string, time.Time, error) {
-			// regenerate the token
-			logger.DebugContext(ctx, "Refreshing session token", "username", username)
-
-			// Intercept fake user for local debugging
-			var resp *pb.LoginResponse
-			var err error
-
-			if username == constants.DebugUsername && string(decodedPassword) == constants.DebugPassword {
-				logger.InfoContext(ctx, "Using fake user for debugging (token refresh)")
-				resp = &pb.LoginResponse{
-					Username: constants.DebugUsername,
-					Password: constants.DebugPassword,
-					Token:    constants.DebugUserCookie,
-				}
-			} else {
-				resp, err = s.grpc.client.Login(ctx, &pb.LoginRequest{
-					Username: username,
-					Password: string(decodedPassword),
-				})
-
-				if err != nil {
-					logger.ErrorContext(ctx, "Failed to login", "error", err)
-					return "", time.Now(), err
-				}
-			}
-
-			return resp.Token, time.Now().Add(imaluumSessionTTL), nil
-		}
+		refresh := s.loginFunc(ctx, username, string(decodedPassword))
 
 		newToken, err := s.tokenManager.GetToken(username, refresh)
 		if err != nil {
@@ -202,4 +174,44 @@ func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string
 		imaluumCookie: imaluumCookie,
 		apiKey:        userAPIKey,
 	}, nil
+}
+
+// loginFunc returns a TokenManager refresh closure that logs into i-Ma'luum
+// (via the gRPC auth service) and caches the resulting cookie for
+// imaluumSessionTTL. password must be plaintext.
+func (s *Server) loginFunc(ctx context.Context, username, password string) func() (string, time.Time, error) {
+	return func() (string, time.Time, error) {
+		logger := s.log
+		logger.DebugContext(ctx, "Refreshing session token", "username", username)
+
+		var resp *pb.LoginResponse
+		var err error
+
+		if username == constants.DebugUsername && password == constants.DebugPassword {
+			logger.InfoContext(ctx, "Using fake user for debugging (token refresh)")
+			resp = &pb.LoginResponse{
+				Username: constants.DebugUsername,
+				Password: constants.DebugPassword,
+				Token:    constants.DebugUserCookie,
+			}
+		} else {
+			resp, err = s.grpc.client.Login(ctx, &pb.LoginRequest{
+				Username: username,
+				Password: password,
+			})
+			if err != nil {
+				logger.ErrorContext(ctx, "Failed to login", "error", err)
+				return "", time.Now(), err
+			}
+		}
+
+		return resp.Token, time.Now().Add(imaluumSessionTTL), nil
+	}
+}
+
+// refreshSession evicts the cached session for username and forces a fresh
+// login, returning the new cookie. Used to recover from a stale session.
+func (s *Server) refreshSession(ctx context.Context, username, password string) (string, error) {
+	s.tokenManager.Invalidate(username)
+	return s.tokenManager.GetToken(username, s.loginFunc(ctx, username, password))
 }
