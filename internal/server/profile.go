@@ -21,12 +21,17 @@ func (s *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 
 	var (
 		logger = s.log
-		cookie = r.Context().Value(ctxToken).(string)
 	)
 
-	profile, err := s.Profile(r.Context(), cookie)
-	if err != nil {
-		// Profile already logs the specific failure cause.
+	var profile *dtos.Profile
+	if err := s.scrapeWithRetry(r.Context(), func(cookie string) (bool, error) {
+		p, stale, err := s.Profile(r.Context(), cookie)
+		if err != nil {
+			return false, err
+		}
+		profile = p
+		return stale, nil
+	}); err != nil {
 		errors.Render(w, r, err)
 		return
 	}

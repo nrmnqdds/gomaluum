@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/gocolly/colly/v2"
 	"github.com/lucsky/cuid"
@@ -139,7 +140,7 @@ func extractProfileData(e *colly.HTMLElement) *profileData {
 	return data
 }
 
-func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, error) {
+func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, bool, error) {
 	logger := s.log
 
 	// Return fake data for fake user
@@ -156,14 +157,16 @@ func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, err
 			MaritalStatus: "Single",
 			Address:       "No. 123, Jalan Bunga Raya, Taman Melati, 53100 Kuala Lumpur, Wilayah Persekutuan",
 			ImageURL:      "https://smartcard.iium.edu.my/packages/card/printing/camera/uploads/original/2214227.jpeg",
-		}, nil
+		}, false, nil
 	}
 
 	// Pre-build cookie string
 	cookieStr := "MOD_AUTH_CAS=" + cookie
 
+	var stale atomic.Bool
 	c := colly.NewCollector()
 	c.WithTransport(s.httpClient.Transport)
+	detectStale(c, &stale)
 
 	var profileResult *dtos.Profile
 
@@ -195,13 +198,17 @@ func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, err
 
 	if err := c.Visit(constants.ImaluumProfilePage); err != nil {
 		logger.ErrorContext(ctx, "Failed to go to URL", "error", err)
-		return nil, errors.ErrFailedToGoToURL
+		return nil, false, errors.ErrFailedToGoToURL
+	}
+
+	if stale.Load() {
+		return nil, true, nil
 	}
 
 	if profileResult == nil {
 		logger.ErrorContext(ctx, "Failed to extract profile data")
-		return nil, errors.ErrFailedToGoToURL
+		return nil, false, errors.ErrFailedToGoToURL
 	}
 
-	return profileResult, nil
+	return profileResult, false, nil
 }
