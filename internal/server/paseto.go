@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/cristalhq/base64"
@@ -165,7 +164,7 @@ func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string
 		newToken, err := s.tokenManager.GetToken(username, refresh)
 		if err != nil {
 			logger.ErrorContext(ctx, "Failed to get token", "error", err)
-			log.Fatal(err)
+			return nil, err
 		}
 
 		logger.DebugContext(ctx, "Refreshed token", "username", username)
@@ -190,10 +189,16 @@ func (s *Server) DecodePasetoToken(ctx context.Context, token, userAPIKey string
 		return nil, err
 	}
 
+	plainPassword, err := base64.StdEncoding.DecodeString(password)
+	if err != nil {
+		logger.ErrorContext(ctx, "Failed to decode password", "error", err)
+		return nil, err
+	}
+
 	go s.UpdateAnalytics(username)
 	return &TokenPayload{
 		username:      username,
-		password:      password,
+		password:      string(plainPassword),
 		imaluumCookie: imaluumCookie,
 		apiKey:        userAPIKey,
 	}, nil
