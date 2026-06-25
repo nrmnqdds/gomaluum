@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/bytedance/sonic"
@@ -74,42 +75,51 @@ func (s *Server) FinalExamHandler(w http.ResponseWriter, r *http.Request) {
 
 	var (
 		logger = s.log
-		cookie = r.Context().Value(ctxToken).(string)
 		mu     sync.Mutex
 		exams  []dtos.FinalExamItem
 	)
 
-	cookieStr := "MOD_AUTH_CAS=" + cookie
+	if err := s.scrapeWithRetry(r.Context(), func(cookie string) (bool, error) {
+		// Reset accumulators so a retry starts clean.
+		mu.Lock()
+		exams = exams[:0]
+		mu.Unlock()
 
-	c := colly.NewCollector()
-	c.WithTransport(s.httpClient.Transport)
+		var stale atomic.Bool
+		c := colly.NewCollector()
+		c.WithTransport(s.httpClient.Transport)
+		detectStale(c, &stale)
 
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("Cookie", cookieStr)
-		r.Headers.Set("User-Agent", cuid.New())
-	})
-
-	c.OnHTML("table.table.table-hover tbody tr", func(e *colly.HTMLElement) {
-		cells := e.DOM.Find("td")
-		if cells.Length() == 0 {
-			return
-		}
-
-		tds := finalExamTdPool.Get().([]string)
-		tds = tds[:0]
-
-		cells.Each(func(_ int, s *goquery.Selection) {
-			tds = append(tds, s.Text())
+		c.OnRequest(func(r *colly.Request) {
+			r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
+			r.Headers.Set("User-Agent", cuid.New())
 		})
 
-		parseFinalExamRow(tds, &exams, &mu)
+		c.OnHTML("table.table.table-hover tbody tr", func(e *colly.HTMLElement) {
+			cells := e.DOM.Find("td")
+			if cells.Length() == 0 {
+				return
+			}
 
-		finalExamTdPool.Put(tds)
-	})
+			tds := finalExamTdPool.Get().([]string)
+			tds = tds[:0]
 
-	if err := c.Visit(constants.ImaluumFinalExamPage); err != nil {
-		logger.ErrorContext(r.Context(), "Failed to go to URL", "error", err)
-		errors.Render(w, r, errors.ErrFailedToGoToURL)
+			cells.Each(func(_ int, s *goquery.Selection) {
+				tds = append(tds, s.Text())
+			})
+
+			parseFinalExamRow(tds, &exams, &mu)
+
+			finalExamTdPool.Put(tds)
+		})
+
+		if err := c.Visit(constants.ImaluumFinalExamPage); err != nil {
+			return false, errors.ErrFailedToGoToURL
+		}
+		return stale.Load(), nil
+	}); err != nil {
+		logger.ErrorContext(r.Context(), "Failed to scrape final exam timetable", "error", err)
+		errors.Render(w, r, err)
 		return
 	}
 

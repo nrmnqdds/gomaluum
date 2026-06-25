@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/bytedance/sonic"
@@ -82,46 +83,55 @@ func (s *Server) DisciplinaryHandler(w http.ResponseWriter, r *http.Request) {
 
 	var (
 		logger    = s.log
-		cookie    = r.Context().Value(ctxToken).(string)
 		mu        sync.Mutex
 		compounds []dtos.DisciplinaryCompound
 	)
 
-	cookieStr := "MOD_AUTH_CAS=" + cookie
+	if err := s.scrapeWithRetry(r.Context(), func(cookie string) (bool, error) {
+		// Reset accumulators so a retry starts clean.
+		mu.Lock()
+		compounds = compounds[:0]
+		mu.Unlock()
 
-	c := colly.NewCollector()
-	c.WithTransport(s.httpClient.Transport)
+		var stale atomic.Bool
+		c := colly.NewCollector()
+		c.WithTransport(s.httpClient.Transport)
+		detectStale(c, &stale)
 
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("Cookie", cookieStr)
-		r.Headers.Set("User-Agent", cuid.New())
-	})
-
-	c.OnHTML("table.table.table-hover tbody tr", func(e *colly.HTMLElement) {
-		cells := e.DOM.Find("td")
-		if cells.Length() < 8 {
-			return
-		}
-
-		tds := disciplinaryTdPool.Get().([]string)
-		tds = tds[:0]
-		defer disciplinaryTdPool.Put(tds)
-
-		var actionCell *goquery.Selection
-		cells.Each(func(i int, s *goquery.Selection) {
-			if i < 8 {
-				tds = append(tds, s.Text())
-			} else if i == 8 {
-				actionCell = s
-			}
+		c.OnRequest(func(r *colly.Request) {
+			r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
+			r.Headers.Set("User-Agent", cuid.New())
 		})
 
-		parseDisciplinaryRow(tds, actionCell, &compounds, &mu)
-	})
+		c.OnHTML("table.table.table-hover tbody tr", func(e *colly.HTMLElement) {
+			cells := e.DOM.Find("td")
+			if cells.Length() < 8 {
+				return
+			}
 
-	if err := c.Visit(constants.ImaluumDisciplinaryPage); err != nil {
-		logger.ErrorContext(r.Context(), "Failed to go to URL", "error", err)
-		errors.Render(w, r, errors.ErrFailedToGoToURL)
+			tds := disciplinaryTdPool.Get().([]string)
+			tds = tds[:0]
+			defer disciplinaryTdPool.Put(tds)
+
+			var actionCell *goquery.Selection
+			cells.Each(func(i int, s *goquery.Selection) {
+				if i < 8 {
+					tds = append(tds, s.Text())
+				} else if i == 8 {
+					actionCell = s
+				}
+			})
+
+			parseDisciplinaryRow(tds, actionCell, &compounds, &mu)
+		})
+
+		if err := c.Visit(constants.ImaluumDisciplinaryPage); err != nil {
+			return false, errors.ErrFailedToGoToURL
+		}
+		return stale.Load(), nil
+	}); err != nil {
+		logger.ErrorContext(r.Context(), "Failed to scrape disciplinary records", "error", err)
+		errors.Render(w, r, err)
 		return
 	}
 
