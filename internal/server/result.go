@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/bytedance/sonic"
@@ -99,7 +100,7 @@ func parseResultRow(tds []string, subjects *[]dtos.Result, gpaInfo *map[string]s
 }
 
 // Worker function for processing result sessions
-func (s *Server) resultWorker(jobs <-chan resultJob, results chan<- resultWorkerResult, cookie string) {
+func (s *Server) resultWorker(jobs <-chan resultJob, results chan<- resultWorkerResult, cookie string, stale *atomic.Bool) {
 	cookieStr := "MOD_AUTH_CAS=" + cookie
 
 	for job := range jobs {
@@ -108,6 +109,7 @@ func (s *Server) resultWorker(jobs <-chan resultJob, results chan<- resultWorker
 
 			c := colly.NewCollector()
 			c.WithTransport(s.httpClient.Transport)
+			detectStale(c, stale)
 
 			var (
 				mu       sync.Mutex
@@ -170,7 +172,7 @@ func (s *Server) resultWorker(jobs <-chan resultJob, results chan<- resultWorker
 }
 
 // Process results using worker pool pattern
-func (s *Server) processResultsWithWorkerPool(queries, names []string, cookie string) ([]dtos.ResultResponse, error) {
+func (s *Server) processResultsWithWorkerPool(queries, names []string, cookie string, stale *atomic.Bool) ([]dtos.ResultResponse, error) {
 	const maxWorkers = 5
 
 	jobs := make(chan resultJob, len(queries))
@@ -178,7 +180,7 @@ func (s *Server) processResultsWithWorkerPool(queries, names []string, cookie st
 
 	// Start workers
 	for range maxWorkers {
-		go s.resultWorker(jobs, results, cookie)
+		go s.resultWorker(jobs, results, cookie, stale)
 	}
 
 	// Send jobs
@@ -228,6 +230,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 		cookie         = r.Context().Value(ctxToken).(string)
 		sessionQueries []string
 		sessionNames   []string
+		results        []dtos.ResultResponse
 	)
 
 	// Return fake data for fake user
@@ -332,49 +335,53 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Pre-build cookie string once
-	cookieStr := "MOD_AUTH_CAS=" + cookie
+	if err := s.scrapeWithRetry(r.Context(), func(cookie string) (bool, error) {
+		var stale atomic.Bool
+		sessionQueries = sessionQueries[:0]
+		sessionNames = sessionNames[:0]
 
-	c := colly.NewCollector()
-	c.WithTransport(s.httpClient.Transport)
-
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("Cookie", cookieStr)
-		r.Headers.Set("User-Agent", cuid.New())
-	})
-
-	c.OnHTML(".box.box-primary .box-header.with-border .dropdown ul.dropdown-menu", func(e *colly.HTMLElement) {
-		sessionQueries = e.ChildAttrs("li[style*='font-size:16px'] a", "href")
-		sessionNames = e.ChildTexts("li[style*='font-size:16px'] a")
-	})
-
-	if err := c.Visit(constants.ImaluumResultPage); err != nil {
-		logger.ErrorContext(r.Context(), "Failed to go to URL", "error", err)
-		errors.Render(w, r, errors.ErrFailedToGoToURL)
-		return
-	}
-
-	// Filter out unwanted sessions with pre-allocated slices
-	filteredQueries := make([]string, 0, len(sessionQueries))
-	filteredNames := make([]string, 0, len(sessionNames))
-
-	for i := range sessionQueries {
-		if !slices.Contains(UnwantedSessionQueries[:], sessionQueries[i]) {
-			filteredQueries = append(filteredQueries, sessionQueries[i])
-			filteredNames = append(filteredNames, sessionNames[i])
+		c := colly.NewCollector()
+		c.WithTransport(s.httpClient.Transport)
+		detectStale(c, &stale)
+		c.OnRequest(func(r *colly.Request) {
+			r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
+			r.Headers.Set("User-Agent", cuid.New())
+		})
+		c.OnHTML(".box.box-primary .box-header.with-border .dropdown ul.dropdown-menu", func(e *colly.HTMLElement) {
+			sessionQueries = e.ChildAttrs("li[style*='font-size:16px'] a", "href")
+			sessionNames = e.ChildTexts("li[style*='font-size:16px'] a")
+		})
+		if err := c.Visit(constants.ImaluumResultPage); err != nil {
+			return false, errors.ErrFailedToGoToURL
 		}
-	}
+		if stale.Load() {
+			return true, nil
+		}
 
-	if len(filteredQueries) == 0 {
-		logger.ErrorContext(r.Context(), "No valid sessions found")
-		errors.Render(w, r, errors.ErrResultIsEmpty)
-		return
-	}
+		filteredQueries := make([]string, 0, len(sessionQueries))
+		filteredNames := make([]string, 0, len(sessionNames))
+		for i := range sessionQueries {
+			if !slices.Contains(UnwantedSessionQueries[:], sessionQueries[i]) {
+				filteredQueries = append(filteredQueries, sessionQueries[i])
+				filteredNames = append(filteredNames, sessionNames[i])
+			}
+		}
+		if len(filteredQueries) == 0 {
+			logger.ErrorContext(r.Context(), "No valid sessions found")
+			return false, errors.ErrResultIsEmpty
+		}
 
-	// Use worker pool for concurrent processing
-	results, err := s.processResultsWithWorkerPool(filteredQueries, filteredNames, cookie)
-	if err != nil {
-		logger.ErrorContext(r.Context(), "Failed to process results", "error", err)
+		result, err := s.processResultsWithWorkerPool(filteredQueries, filteredNames, cookie, &stale)
+		if err != nil {
+			return false, err
+		}
+		if stale.Load() {
+			return true, nil
+		}
+		results = result
+		return false, nil
+	}); err != nil {
+		logger.ErrorContext(r.Context(), "Failed to scrape results", "error", err)
 		errors.Render(w, r, err)
 		return
 	}

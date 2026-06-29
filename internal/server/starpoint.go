@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/bytedance/sonic"
@@ -165,66 +166,77 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 
 	var (
 		logger      = s.log
-		cookie      = r.Context().Value(ctxToken).(string)
 		mu          sync.Mutex
 		programs    []dtos.StarpointProgram
 		starpoint   = &dtos.Starpoint{}
 		lastSession string
 	)
 
-	// Pre-build cookie string once
-	cookieStr := "MOD_AUTH_CAS=" + cookie
+	if err := s.scrapeWithRetry(r.Context(), func(cookie string) (bool, error) {
+		// Reset accumulators so a retry starts clean.
+		mu.Lock()
+		programs = programs[:0]
+		lastSession = ""
+		starpoint.CummulativeAverage = 0
+		starpoint.TotalPoints = 0
+		mu.Unlock()
 
-	c := colly.NewCollector()
-	c.WithTransport(s.httpClient.Transport)
+		var stale atomic.Bool
+		c := colly.NewCollector()
+		c.WithTransport(s.httpClient.Transport)
+		detectStale(c, &stale)
 
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("Cookie", cookieStr)
-		r.Headers.Set("User-Agent", cuid.New())
-	})
-
-	c.OnHTML("table.table.table-hover tbody tr", func(e *colly.HTMLElement) {
-		// Get all text at once with efficient DOM traversal
-		cells := e.DOM.Find("td")
-		if cells.Length() == 0 {
-			return
-		}
-
-		tds := programTdStringSlicePool.Get().([]string)
-		tds = tds[:0] // Reset slice
-
-		cells.Each(func(_ int, s *goquery.Selection) {
-			tds = append(tds, s.Text())
+		c.OnRequest(func(r *colly.Request) {
+			r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
+			r.Headers.Set("User-Agent", cuid.New())
 		})
 
-		// Check if this is a summary row (Cummulative Average or Total Point)
-		// These values appear in different cells
-		for _, cellText := range tds {
-			trimmedCell := strings.TrimSpace(cellText)
-			if strings.Contains(trimmedCell, "Cummulative Average") {
-				if starpoint.CummulativeAverage == 0 {
-					starpoint.CummulativeAverage = getFloatFromString(trimmedCell)
-				}
-				programTdStringSlicePool.Put(tds)
+		c.OnHTML("table.table.table-hover tbody tr", func(e *colly.HTMLElement) {
+			// Get all text at once with efficient DOM traversal
+			cells := e.DOM.Find("td")
+			if cells.Length() == 0 {
 				return
 			}
-			if strings.Contains(trimmedCell, "Total Point") {
-				if starpoint.TotalPoints == 0 {
-					starpoint.TotalPoints = getFloatFromString(trimmedCell)
+
+			tds := programTdStringSlicePool.Get().([]string)
+			tds = tds[:0] // Reset slice
+
+			cells.Each(func(_ int, s *goquery.Selection) {
+				tds = append(tds, s.Text())
+			})
+
+			// Check if this is a summary row (Cummulative Average or Total Point)
+			// These values appear in different cells
+			for _, cellText := range tds {
+				trimmedCell := strings.TrimSpace(cellText)
+				if strings.Contains(trimmedCell, "Cummulative Average") {
+					if starpoint.CummulativeAverage == 0 {
+						starpoint.CummulativeAverage = getFloatFromString(trimmedCell)
+					}
+					programTdStringSlicePool.Put(tds)
+					return
 				}
-				programTdStringSlicePool.Put(tds)
-				return
+				if strings.Contains(trimmedCell, "Total Point") {
+					if starpoint.TotalPoints == 0 {
+						starpoint.TotalPoints = getFloatFromString(trimmedCell)
+					}
+					programTdStringSlicePool.Put(tds)
+					return
+				}
 			}
+
+			parseProgramRows(tds, &programs, &mu, &lastSession, logger)
+
+			programTdStringSlicePool.Put(tds)
+		})
+
+		if err := c.Visit(constants.ImaluumStarpointPage); err != nil {
+			return false, errors.ErrFailedToGoToURL
 		}
-
-		parseProgramRows(tds, &programs, &mu, &lastSession, logger)
-
-		programTdStringSlicePool.Put(tds)
-	})
-
-	if err := c.Visit(constants.ImaluumStarpointPage); err != nil {
-		logger.ErrorContext(r.Context(), "Failed to go to URL", "error", err)
-		errors.Render(w, r, errors.ErrFailedToGoToURL)
+		return stale.Load(), nil
+	}); err != nil {
+		logger.ErrorContext(r.Context(), "Failed to scrape starpoints", "error", err)
+		errors.Render(w, r, err)
 		return
 	}
 

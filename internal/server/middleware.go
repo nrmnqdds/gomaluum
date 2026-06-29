@@ -11,6 +11,7 @@ type originCookie int
 
 const (
 	ctxToken originCookie = iota
+	ctxSession
 )
 
 func (s *Server) PasetoAuthenticator() func(http.Handler) http.Handler {
@@ -65,6 +66,7 @@ func (s *Server) PasetoAuthenticator() func(http.Handler) http.Handler {
 
 			// Create a new context from the request context and add the token to it
 			ctx := context.WithValue(r.Context(), ctxToken, token.imaluumCookie)
+			ctx = context.WithValue(ctx, ctxSession, token)
 
 			// Token is authenticated, pass it through
 			next.ServeHTTP(w, r.WithContext(ctx))

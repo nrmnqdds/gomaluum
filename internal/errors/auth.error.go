@@ -30,4 +30,9 @@ var (
 		Message:    "Failed to close response body",
 		StatusCode: 500,
 	}
+
+	ErrStaleSession = &CustomError{
+		Message:    "Session expired and could not be refreshed, please log in again",
+		StatusCode: 401,
+	}
 )
