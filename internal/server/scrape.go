@@ -30,6 +30,17 @@ func applyImaluumHeaders(c *colly.Collector, cookie string) {
 	})
 }
 
+// newImaluumCollector builds a colly.Collector wired for an authenticated
+// i-Ma'luum scrape: the shared HTTP transport, stale-session detection, and the
+// required request headers. Callers add their own OnHTML handlers and Visit.
+func (s *Server) newImaluumCollector(cookie string, stale *atomic.Bool) *colly.Collector {
+	c := colly.NewCollector()
+	c.WithTransport(s.httpClient.Transport)
+	detectStale(c, stale)
+	applyImaluumHeaders(c, cookie)
+	return c
+}
+
 // runWithRetry runs fn with cookie. If fn reports a stale session, it calls
 // refresh for a new cookie and retries fn exactly once. Still stale after the
 // retry returns ErrStaleSession.

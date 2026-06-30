@@ -160,13 +160,9 @@ func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, boo
 	}
 
 	var stale atomic.Bool
-	c := colly.NewCollector()
-	c.WithTransport(s.httpClient.Transport)
-	detectStale(c, &stale)
+	c := s.newImaluumCollector(cookie, &stale)
 
 	var profileResult *dtos.Profile
-
-	applyImaluumHeaders(c, cookie)
 
 	c.OnHTML("body", func(e *colly.HTMLElement) {
 		// Extract all profile data efficiently

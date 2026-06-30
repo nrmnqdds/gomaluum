@@ -105,9 +105,7 @@ func (s *Server) resultWorker(jobs <-chan resultJob, results chan<- resultWorker
 		func() {
 			defer utils.CatchPanic("result worker")
 
-			c := colly.NewCollector()
-			c.WithTransport(s.httpClient.Transport)
-			detectStale(c, stale)
+			c := s.newImaluumCollector(cookie, stale)
 
 			var (
 				mu       sync.Mutex
@@ -119,8 +117,6 @@ func (s *Server) resultWorker(jobs <-chan resultJob, results chan<- resultWorker
 					"status": "0",
 				}
 			)
-
-			applyImaluumHeaders(c, cookie)
 
 			c.OnHTML("table.table-hover tbody tr", func(e *colly.HTMLElement) {
 				cells := e.DOM.Find("td")
@@ -335,10 +331,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 		sessionQueries = sessionQueries[:0]
 		sessionNames = sessionNames[:0]
 
-		c := colly.NewCollector()
-		c.WithTransport(s.httpClient.Transport)
-		detectStale(c, &stale)
-		applyImaluumHeaders(c, cookie)
+		c := s.newImaluumCollector(cookie, &stale)
 		c.OnHTML(".box.box-primary .box-header.with-border .dropdown ul.dropdown-menu", func(e *colly.HTMLElement) {
 			sessionQueries = e.ChildAttrs("li[style*='font-size:16px'] a", "href")
 			sessionNames = e.ChildTexts("li[style*='font-size:16px'] a")

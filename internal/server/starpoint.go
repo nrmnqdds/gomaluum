@@ -182,11 +182,7 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 		mu.Unlock()
 
 		var stale atomic.Bool
-		c := colly.NewCollector()
-		c.WithTransport(s.httpClient.Transport)
-		detectStale(c, &stale)
-
-		applyImaluumHeaders(c, cookie)
+		c := s.newImaluumCollector(cookie, &stale)
 
 		c.OnHTML("table.table.table-hover tbody tr", func(e *colly.HTMLElement) {
 			// Get all text at once with efficient DOM traversal

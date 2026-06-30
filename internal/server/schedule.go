@@ -237,14 +237,10 @@ func (s *Server) scheduleWorker(jobs <-chan scheduleJob, results chan<- schedule
 		func() {
 			defer utils.CatchPanic("schedule worker")
 
-			c := colly.NewCollector()
-			c.WithTransport(s.httpClient.Transport)
-			detectStale(c, stale)
+			c := s.newImaluumCollector(cookie, stale)
 
 			mu := sync.Mutex{}
 			subjects := []dtos.ScheduleSubject{}
-
-			applyImaluumHeaders(c, cookie)
 
 			c.OnHTML("table.table-hover tbody tr", func(e *colly.HTMLElement) {
 				// Get all text at once with efficient DOM traversal
@@ -553,10 +549,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		sessionQueries = sessionQueries[:0]
 		sessionNames = sessionNames[:0]
 
-		c := colly.NewCollector()
-		c.WithTransport(s.httpClient.Transport)
-		detectStale(c, &stale)
-		applyImaluumHeaders(c, cookie)
+		c := s.newImaluumCollector(cookie, &stale)
 		c.OnHTML(".box.box-primary .box-header.with-border .dropdown ul.dropdown-menu", func(e *colly.HTMLElement) {
 			sessionQueries = e.ChildAttrs("li[style*='font-size:16px'] a", "href")
 			sessionNames = e.ChildTexts("li[style*='font-size:16px'] a")
