@@ -4,12 +4,10 @@ import (
 	"embed"
 	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/riandyrn/otelchi"
 	slogchi "github.com/samber/slog-chi"
 )
 
@@ -17,12 +15,6 @@ var DocsPath embed.FS
 
 func (s *Server) RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
-
-	// OpenTelemetry server-side tracing. Names spans by the matched chi route
-	// pattern (e.g. "GET /api/schedule") and sets http.route, so SigNoz can
-	// break down traffic per endpoint. Registered first so the span context is
-	// available to downstream middleware (access logs get trace/span IDs).
-	r.Use(otelchi.Middleware(os.Getenv("OTEL_SERVICE_NAME"), otelchi.WithChiRoutes(r)))
 
 	// Structured access logging with trace/span correlation. Health checks are
 	// filtered out to avoid probe noise.
