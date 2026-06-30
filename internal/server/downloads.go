@@ -2,7 +2,6 @@ package server
 
 import (
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/nrmnqdds/gomaluum/internal/constants"
@@ -28,12 +27,9 @@ func (s *Server) ExamSlipHandler(w http.ResponseWriter, r *http.Request) {
 
 	req, err := http.NewRequestWithContext(r.Context(), "GET", constants.ImaluumExamSlipPage, nil)
 	if err != nil {
-		log.Printf("Failed to create first request: %v", err)
-		if err := req.Body.Close(); err != nil {
-			log.Printf("Failed to close request body: %v", err)
-			errors.Render(w, r, errors.ErrFailedToCloseRequestBody)
-		}
-		errors.Render(w, r, errors.ErrURLParseFailed)
+		logger.ErrorContext(r.Context(), "Failed to create exam slip request", "error", err)
+		errors.Render(w, r, errors.Wrap(errors.ErrURLParseFailed, err))
+		return
 	}
 
 	setHeadersWithCookie(req, cookie)
@@ -73,12 +69,9 @@ func (s *Server) StudyPlanHandler(w http.ResponseWriter, r *http.Request) {
 
 	req, err := http.NewRequestWithContext(r.Context(), "GET", constants.ImaluumStudyPlanPage, nil)
 	if err != nil {
-		log.Printf("Failed to create first request: %v", err)
-		if err := req.Body.Close(); err != nil {
-			log.Printf("Failed to close request body: %v", err)
-			errors.Render(w, r, errors.ErrFailedToCloseRequestBody)
-		}
-		errors.Render(w, r, errors.ErrURLParseFailed)
+		logger.ErrorContext(r.Context(), "Failed to create study plan request", "error", err)
+		errors.Render(w, r, errors.Wrap(errors.ErrURLParseFailed, err))
+		return
 	}
 
 	setHeadersWithCookie(req, cookie)
@@ -103,6 +96,10 @@ func (s *Server) StudyPlanHandler(w http.ResponseWriter, r *http.Request) {
 func setHeadersWithCookie(req *http.Request, cookie string) {
 	req.Header.Set("Connection", "Keep-Alive")
 	req.Header.Set("Accept-Language", "en-US")
-	req.Header.Set("User-Agent", "Mozilla/5.0")
+	// i-Ma'luum's /MyAcademic/* paths (e.g. study plan) 403 unless the request
+	// carries both a real browser User-Agent and an Accept header containing
+	// text/html. A bare "Mozilla/5.0" is rejected.
+	req.Header.Set("Accept", constants.DefaultAcceptHeader)
+	req.Header.Set("User-Agent", constants.DefaultUserAgent)
 	req.Header.Set("Cookie", "MOD_AUTH_CAS="+cookie)
 }
