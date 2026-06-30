@@ -101,8 +101,6 @@ func parseResultRow(tds []string, subjects *[]dtos.Result, gpaInfo *map[string]s
 
 // Worker function for processing result sessions
 func (s *Server) resultWorker(jobs <-chan resultJob, results chan<- resultWorkerResult, cookie string, stale *atomic.Bool) {
-	cookieStr := "MOD_AUTH_CAS=" + cookie
-
 	for job := range jobs {
 		func() {
 			defer utils.CatchPanic("result worker")
@@ -122,11 +120,7 @@ func (s *Server) resultWorker(jobs <-chan resultJob, results chan<- resultWorker
 				}
 			)
 
-			c.OnRequest(func(r *colly.Request) {
-				r.Headers.Set("Cookie", cookieStr)
-				r.Headers.Set("User-Agent", constants.DefaultUserAgent)
-				r.Headers.Set("Accept", constants.DefaultAcceptHeader)
-			})
+			applyImaluumHeaders(c, cookie)
 
 			c.OnHTML("table.table-hover tbody tr", func(e *colly.HTMLElement) {
 				cells := e.DOM.Find("td")
@@ -344,11 +338,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 		c := colly.NewCollector()
 		c.WithTransport(s.httpClient.Transport)
 		detectStale(c, &stale)
-		c.OnRequest(func(r *colly.Request) {
-			r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
-			r.Headers.Set("User-Agent", constants.DefaultUserAgent)
-			r.Headers.Set("Accept", constants.DefaultAcceptHeader)
-		})
+		applyImaluumHeaders(c, cookie)
 		c.OnHTML(".box.box-primary .box-header.with-border .dropdown ul.dropdown-menu", func(e *colly.HTMLElement) {
 			sessionQueries = e.ChildAttrs("li[style*='font-size:16px'] a", "href")
 			sessionNames = e.ChildTexts("li[style*='font-size:16px'] a")
