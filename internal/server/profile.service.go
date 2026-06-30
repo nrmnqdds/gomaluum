@@ -172,6 +172,7 @@ func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, boo
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("Cookie", cookieStr)
 		r.Headers.Set("User-Agent", constants.DefaultUserAgent)
+		r.Headers.Set("Accept", constants.DefaultAcceptHeader)
 	})
 
 	c.OnHTML("body", func(e *colly.HTMLElement) {

@@ -22,8 +22,13 @@ const (
 	// protection (notably on the /MyAcademic/* paths) returns 403 Forbidden for
 	// requests with a non-browser User-Agent, so all scrapers must send this.
 	DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-	TimeSeparator    = "-"
-	DebugUserCookie  = "gomaluum_debug_user"
-	DebugUsername    = "2214227"
-	DebugPassword    = "fakepass"
+	// DefaultAcceptHeader must contain text/html. i-Ma'luum's /MyAcademic/*
+	// controllers return 403 Forbidden for requests whose Accept header does not
+	// include text/html (even Accept: */* is rejected), so all scrapers must send
+	// this. Plain colly sends no Accept header by default.
+	DefaultAcceptHeader = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+	TimeSeparator       = "-"
+	DebugUserCookie     = "gomaluum_debug_user"
+	DebugUsername       = "2214227"
+	DebugPassword       = "fakepass"
 )
