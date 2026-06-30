@@ -186,11 +186,7 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 		c.WithTransport(s.httpClient.Transport)
 		detectStale(c, &stale)
 
-		c.OnRequest(func(r *colly.Request) {
-			r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
-			r.Headers.Set("User-Agent", constants.DefaultUserAgent)
-			r.Headers.Set("Accept", constants.DefaultAcceptHeader)
-		})
+		applyImaluumHeaders(c, cookie)
 
 		c.OnHTML("table.table.table-hover tbody tr", func(e *colly.HTMLElement) {
 			// Get all text at once with efficient DOM traversal
@@ -232,7 +228,7 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 		})
 
 		if err := c.Visit(constants.ImaluumStarpointPage); err != nil {
-			return false, errors.ErrFailedToGoToURL
+			return false, errors.Wrap(errors.ErrFailedToGoToURL, err)
 		}
 		return stale.Load(), nil
 	}); err != nil {

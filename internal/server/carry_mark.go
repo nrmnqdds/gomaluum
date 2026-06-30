@@ -71,11 +71,7 @@ func (s *Server) CarryMarkHandler(w http.ResponseWriter, r *http.Request) {
 		c.WithTransport(s.httpClient.Transport)
 		detectStale(c, &stale)
 
-		c.OnRequest(func(r *colly.Request) {
-			r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
-			r.Headers.Set("User-Agent", constants.DefaultUserAgent)
-			r.Headers.Set("Accept", constants.DefaultAcceptHeader)
-		})
+		applyImaluumHeaders(c, cookie)
 
 		c.OnHTML("script", func(e *colly.HTMLElement) {
 			content := strings.TrimSpace(e.Text)
@@ -134,7 +130,7 @@ func (s *Server) CarryMarkHandler(w http.ResponseWriter, r *http.Request) {
 		})
 
 		if err := c.Visit(constants.ImaluumCarryMarkPage); err != nil {
-			return false, errors.ErrFailedToGoToURL
+			return false, errors.Wrap(errors.ErrFailedToGoToURL, err)
 		}
 		return stale.Load(), nil
 	}); err != nil {

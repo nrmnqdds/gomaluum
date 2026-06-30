@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/gocolly/colly/v2"
+	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
 )
 
@@ -14,6 +15,18 @@ import (
 func detectStale(c *colly.Collector, stale *atomic.Bool) {
 	c.OnHTML(`input[name="password"]`, func(*colly.HTMLElement) {
 		stale.Store(true)
+	})
+}
+
+// applyImaluumHeaders registers the headers every authenticated i-Ma'luum
+// scrape must send: the session cookie, a real browser User-Agent, and an
+// Accept header containing text/html. The latter two are mandatory — /MyAcademic/*
+// responds 403 without them. See constants.DefaultUserAgent / DefaultAcceptHeader.
+func applyImaluumHeaders(c *colly.Collector, cookie string) {
+	c.OnRequest(func(r *colly.Request) {
+		r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
+		r.Headers.Set("User-Agent", constants.DefaultUserAgent)
+		r.Headers.Set("Accept", constants.DefaultAcceptHeader)
 	})
 }
 

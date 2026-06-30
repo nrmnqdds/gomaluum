@@ -159,9 +159,6 @@ func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, boo
 		}, false, nil
 	}
 
-	// Pre-build cookie string
-	cookieStr := "MOD_AUTH_CAS=" + cookie
-
 	var stale atomic.Bool
 	c := colly.NewCollector()
 	c.WithTransport(s.httpClient.Transport)
@@ -169,11 +166,7 @@ func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, boo
 
 	var profileResult *dtos.Profile
 
-	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("Cookie", cookieStr)
-		r.Headers.Set("User-Agent", constants.DefaultUserAgent)
-		r.Headers.Set("Accept", constants.DefaultAcceptHeader)
-	})
+	applyImaluumHeaders(c, cookie)
 
 	c.OnHTML("body", func(e *colly.HTMLElement) {
 		// Extract all profile data efficiently
@@ -198,7 +191,7 @@ func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, boo
 
 	if err := c.Visit(constants.ImaluumProfilePage); err != nil {
 		logger.ErrorContext(ctx, "Failed to go to URL", "error", err)
-		return nil, false, errors.ErrFailedToGoToURL
+		return nil, false, errors.Wrap(errors.ErrFailedToGoToURL, err)
 	}
 
 	if stale.Load() {
