@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 
 	"github.com/gocolly/colly/v2"
-	"github.com/lucsky/cuid"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
@@ -172,7 +171,7 @@ func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, boo
 
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("Cookie", cookieStr)
-		r.Headers.Set("User-Agent", cuid.New())
+		r.Headers.Set("User-Agent", constants.DefaultUserAgent)
 	})
 
 	c.OnHTML("body", func(e *colly.HTMLElement) {

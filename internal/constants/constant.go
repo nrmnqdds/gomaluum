@@ -18,8 +18,12 @@ const (
 	ImaluumCarryMarkPage        = "https://imaluum.iium.edu.my/MyAcademic/cam"
 	ImaluumStudyPlanPage        = "https://imaluum.iium.edu.my/MyAcademic/studyplan"
 	ImaluumStarpointPage        = "https://imaluum.iium.edu.my/CoCurriculum"
-	TimeSeparator               = "-"
-	DebugUserCookie             = "gomaluum_debug_user"
-	DebugUsername               = "2214227"
-	DebugPassword               = "fakepass"
+	// DefaultUserAgent is a realistic browser User-Agent. i-Ma'luum's bot
+	// protection (notably on the /MyAcademic/* paths) returns 403 Forbidden for
+	// requests with a non-browser User-Agent, so all scrapers must send this.
+	DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+	TimeSeparator    = "-"
+	DebugUserCookie  = "gomaluum_debug_user"
+	DebugUsername    = "2214227"
+	DebugPassword    = "fakepass"
 )

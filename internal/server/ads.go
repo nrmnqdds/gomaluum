@@ -7,6 +7,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/gocolly/colly/v2"
 	"github.com/lucsky/cuid"
+	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/dtos"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
 )
@@ -28,7 +29,7 @@ func (s *Server) AdsHandler(w http.ResponseWriter, r *http.Request) {
 	c.WithTransport(s.httpClient.Transport)
 
 	c.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("User-Agent", cuid.New())
+		r.Headers.Set("User-Agent", constants.DefaultUserAgent)
 	})
 
 	c.OnHTML("div[style*='width:100%; clear:both;height:100px']", func(e *colly.HTMLElement) {
