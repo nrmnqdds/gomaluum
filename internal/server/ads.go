@@ -30,6 +30,7 @@ func (s *Server) AdsHandler(w http.ResponseWriter, r *http.Request) {
 
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("User-Agent", constants.DefaultUserAgent)
+		r.Headers.Set("Accept", constants.DefaultAcceptHeader)
 	})
 
 	c.OnHTML("div[style*='width:100%; clear:both;height:100px']", func(e *colly.HTMLElement) {

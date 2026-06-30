@@ -125,6 +125,7 @@ func (s *Server) resultWorker(jobs <-chan resultJob, results chan<- resultWorker
 			c.OnRequest(func(r *colly.Request) {
 				r.Headers.Set("Cookie", cookieStr)
 				r.Headers.Set("User-Agent", constants.DefaultUserAgent)
+				r.Headers.Set("Accept", constants.DefaultAcceptHeader)
 			})
 
 			c.OnHTML("table.table-hover tbody tr", func(e *colly.HTMLElement) {
@@ -346,6 +347,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 		c.OnRequest(func(r *colly.Request) {
 			r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
 			r.Headers.Set("User-Agent", constants.DefaultUserAgent)
+			r.Headers.Set("Accept", constants.DefaultAcceptHeader)
 		})
 		c.OnHTML(".box.box-primary .box-header.with-border .dropdown ul.dropdown-menu", func(e *colly.HTMLElement) {
 			sessionQueries = e.ChildAttrs("li[style*='font-size:16px'] a", "href")

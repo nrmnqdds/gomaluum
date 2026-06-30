@@ -93,6 +93,7 @@ func (s *Server) FinalExamHandler(w http.ResponseWriter, r *http.Request) {
 		c.OnRequest(func(r *colly.Request) {
 			r.Headers.Set("Cookie", "MOD_AUTH_CAS="+cookie)
 			r.Headers.Set("User-Agent", constants.DefaultUserAgent)
+			r.Headers.Set("Accept", constants.DefaultAcceptHeader)
 		})
 
 		c.OnHTML("table.table.table-hover tbody tr", func(e *colly.HTMLElement) {

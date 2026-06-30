@@ -138,14 +138,6 @@ func main() {
 	server.DocsPath = DocsPath
 	httpServer := server.NewServer(port, grpcClient)
 
-	// Wrap the server handler with otelhttp middleware so every request gets a
-	// server span. The second arg is the operation name used as the span prefix.
-	otelServiceName := os.Getenv("OTEL_SERVICE_NAME")
-	if otelServiceName == "" {
-		otelServiceName = "gomaluum"
-	}
-	httpServer.Handler = otelhttp.NewHandler(httpServer.Handler, otelServiceName)
-
 	// Create channels to track server status
 	done := make(chan bool, 1)
 	httpReady := make(chan bool, 1)
