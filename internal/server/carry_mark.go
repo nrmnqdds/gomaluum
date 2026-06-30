@@ -134,7 +134,7 @@ func (s *Server) CarryMarkHandler(w http.ResponseWriter, r *http.Request) {
 		})
 
 		if err := c.Visit(constants.ImaluumCarryMarkPage); err != nil {
-			return false, errors.ErrFailedToGoToURL
+			return false, errors.Wrap(errors.ErrFailedToGoToURL, err)
 		}
 		return stale.Load(), nil
 	}); err != nil {

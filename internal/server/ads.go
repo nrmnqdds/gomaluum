@@ -44,7 +44,7 @@ func (s *Server) AdsHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := c.Visit("https://souq.iium.edu.my/embeded"); err != nil {
 		logger.ErrorContext(r.Context(), "Failed to visit ads page", "error", err)
-		errors.Render(w, r, errors.ErrFailedToGoToURL)
+		errors.Render(w, r, errors.Wrap(errors.ErrFailedToGoToURL, err))
 		return
 	}
 

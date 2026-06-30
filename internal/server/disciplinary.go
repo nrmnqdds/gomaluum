@@ -127,7 +127,7 @@ func (s *Server) DisciplinaryHandler(w http.ResponseWriter, r *http.Request) {
 		})
 
 		if err := c.Visit(constants.ImaluumDisciplinaryPage); err != nil {
-			return false, errors.ErrFailedToGoToURL
+			return false, errors.Wrap(errors.ErrFailedToGoToURL, err)
 		}
 		return stale.Load(), nil
 	}); err != nil {

@@ -19,7 +19,6 @@ import (
 	"github.com/nrmnqdds/gomaluum/pkg/logger"
 
 	"github.com/jwalton/gchalk"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	_ "golang.org/x/crypto/x509roots/fallback"
 )
 

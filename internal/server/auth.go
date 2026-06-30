@@ -125,7 +125,8 @@ func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	urlObj, err := url.Parse(constants.ImaluumLogoutPage)
 	if err != nil {
-		errors.Render(w, r, errors.ErrURLParseFailed)
+		logger.ErrorContext(r.Context(), "Failed to parse logout URL", "error", err)
+		errors.Render(w, r, errors.Wrap(errors.ErrURLParseFailed, err))
 		return
 	}
 
@@ -141,12 +142,18 @@ func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		Transport: otelhttp.NewTransport(http.DefaultTransport),
 	}
 
-	req, _ := http.NewRequestWithContext(r.Context(), "GET", constants.ImaluumCasLogoutPage, nil)
+	req, err := http.NewRequestWithContext(r.Context(), "GET", constants.ImaluumCasLogoutPage, nil)
+	if err != nil {
+		logger.ErrorContext(r.Context(), "Failed to create CAS logout request", "error", err)
+		errors.Render(w, r, errors.Wrap(errors.ErrURLParseFailed, err))
+		return
+	}
 	setHeaders(req)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		errors.Render(w, r, errors.ErrURLParseFailed)
+		logger.ErrorContext(r.Context(), "Failed to reach CAS logout URL", "error", err)
+		errors.Render(w, r, errors.Wrap(errors.ErrFailedToGoToURL, err))
 		return
 	}
 	resp.Body.Close()
