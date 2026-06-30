@@ -43,8 +43,11 @@ func Wrap(predefError *CustomError, originalErr error) *CustomError {
 func Render(w http.ResponseWriter, r *http.Request, err error) {
 	re, ok := err.(*CustomError)
 	if !ok {
-		render.Status(r, http.StatusInternalServerError)
-		render.Render(w, r, re)
+		re = &CustomError{
+			OriginalErr: err,
+			Message:     "Internal Server Error",
+			StatusCode:  http.StatusInternalServerError,
+		}
 	}
 	render.Status(r, re.GetStatusCode())
 	render.Render(w, r, re)

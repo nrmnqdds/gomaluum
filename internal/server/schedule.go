@@ -272,7 +272,7 @@ func (s *Server) scheduleWorker(jobs <-chan scheduleJob, results chan<- schedule
 			url := constants.ImaluumSchedulePage + job.query
 			if err := c.Visit(url); err != nil {
 				results <- scheduleResult{
-					err: errors.ErrFailedToGoToURL,
+					err: errors.Wrap(errors.ErrFailedToGoToURL, err),
 				}
 				return
 			}
@@ -570,7 +570,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 			sessionNames = e.ChildTexts("li[style*='font-size:16px'] a")
 		})
 		if err := c.Visit(constants.ImaluumSchedulePage); err != nil {
-			return false, errors.ErrFailedToGoToURL
+			return false, errors.Wrap(errors.ErrFailedToGoToURL, err)
 		}
 		if stale.Load() {
 			return true, nil
