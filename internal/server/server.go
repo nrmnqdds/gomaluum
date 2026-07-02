@@ -178,8 +178,19 @@ func createHTTPClient() (*http.Client, error) {
 		rootCAs = x509.NewCertPool()
 	}
 
+	// Route i-Ma'luum traffic through a residential egress proxy when configured.
+	// Only i-Ma'luum requests are proxied; all other hosts stay direct.
+	proxyFunc, err := newImaluumProxyFunc(os.Getenv("IMALUUM_PROXY_URL"))
+	if err != nil {
+		return nil, err
+	}
+	if proxyFunc != nil {
+		log.Println("i-Ma'luum egress: routing through IMALUUM_PROXY_URL")
+	}
+
 	// Create a custom transport with the enhanced certificate pool
 	transport := &http.Transport{
+		Proxy:               proxyFunc,
 		MaxIdleConns:        100,
 		MaxIdleConnsPerHost: 10,
 		IdleConnTimeout:     90 * time.Second,
