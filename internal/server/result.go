@@ -139,7 +139,7 @@ func (s *Server) resultWorker(ctx context.Context, jobs <-chan resultJob, result
 			url := constants.ImaluumResultPage + job.query
 			if err := c.Visit(url); err != nil {
 				results <- resultWorkerResult{
-					err: errors.Wrap(errors.ErrFailedToGoToURL, err),
+					err: classifyVisitError(err),
 				}
 				return
 			}
@@ -338,7 +338,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 			sessionNames = e.ChildTexts("li[style*='font-size:16px'] a")
 		})
 		if err := c.Visit(constants.ImaluumResultPage); err != nil {
-			return false, errors.Wrap(errors.ErrFailedToGoToURL, err)
+			return false, classifyVisitError(err)
 		}
 		if stale.Load() {
 			return true, nil

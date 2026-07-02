@@ -107,7 +107,7 @@ func (s *Server) FinalExamHandler(w http.ResponseWriter, r *http.Request) {
 		})
 
 		if err := c.Visit(constants.ImaluumFinalExamPage); err != nil {
-			return false, errors.Wrap(errors.ErrFailedToGoToURL, err)
+			return false, classifyVisitError(err)
 		}
 		return stale.Load(), nil
 	}); err != nil {

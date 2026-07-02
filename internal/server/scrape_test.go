@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 
 	apperrors "github.com/nrmnqdds/gomaluum/internal/errors"
@@ -78,4 +79,28 @@ func TestScrapeWithRetry_MissingSession(t *testing.T) {
 	})
 	require.ErrorIs(t, err, apperrors.ErrInvalidToken)
 	require.False(t, called)
+}
+
+func TestClassifyVisitError(t *testing.T) {
+	t.Run("403 Forbidden: maps to upstream forbidden (502)", func(t *testing.T) {
+		// colly reports a non-2xx as errors.New(http.StatusText(code)).
+		collyErr := errors.New(http.StatusText(http.StatusForbidden))
+		got := classifyVisitError(collyErr)
+		require.Equal(t, apperrors.ErrUpstreamForbidden.Message, got.Message)
+		require.Equal(t, 502, got.GetStatusCode())
+		require.ErrorIs(t, got.OriginalErr, collyErr)
+	})
+
+	t.Run("other status: stays generic failure (500)", func(t *testing.T) {
+		collyErr := errors.New(http.StatusText(http.StatusInternalServerError))
+		got := classifyVisitError(collyErr)
+		require.Equal(t, apperrors.ErrFailedToGoToURL.Message, got.Message)
+		require.Equal(t, 500, got.GetStatusCode())
+	})
+
+	t.Run("transport error: stays generic failure (500)", func(t *testing.T) {
+		got := classifyVisitError(errors.New("dial tcp: connection refused"))
+		require.Equal(t, apperrors.ErrFailedToGoToURL.Message, got.Message)
+		require.Equal(t, 500, got.GetStatusCode())
+	})
 }

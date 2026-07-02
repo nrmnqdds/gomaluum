@@ -187,7 +187,7 @@ func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, boo
 
 	if err := c.Visit(constants.ImaluumProfilePage); err != nil {
 		logger.ErrorContext(ctx, "Failed to go to URL", "error", err)
-		return nil, false, errors.Wrap(errors.ErrFailedToGoToURL, err)
+		return nil, false, classifyVisitError(err)
 	}
 
 	if stale.Load() {

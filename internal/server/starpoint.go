@@ -224,7 +224,7 @@ func (s *Server) StarpointHandler(w http.ResponseWriter, r *http.Request) {
 		})
 
 		if err := c.Visit(constants.ImaluumStarpointPage); err != nil {
-			return false, errors.Wrap(errors.ErrFailedToGoToURL, err)
+			return false, classifyVisitError(err)
 		}
 		return stale.Load(), nil
 	}); err != nil {
