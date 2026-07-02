@@ -116,14 +116,14 @@ func main() {
 		}
 	}()
 
-	// Get gRPC service URL from environment
-	grpcServiceURL := os.Getenv("GRPC_SERVICE_URL")
-	if grpcServiceURL == "" {
-		log.Fatal("GRPC_SERVICE_URL environment variable is required")
+	// Get the GAS (auth service) gRPC URL from environment
+	gasServiceURL := os.Getenv("GAS_SERVICE_URL")
+	if gasServiceURL == "" {
+		log.Fatal("GAS_SERVICE_URL environment variable is required")
 	}
 
 	// Initialize gRPC client connection to external service
-	grpcClient, err := server.NewGRPCClient(grpcServiceURL)
+	grpcClient, err := server.NewGRPCClient(gasServiceURL)
 	if err != nil {
 		log.Fatalf("failed to connect to gRPC service: %v", err)
 	}
@@ -155,8 +155,8 @@ func main() {
 		`))
 
 	fmt.Println(gchalk.Yellow("====================================================="))
-	fmt.Println(gchalk.Green(fmt.Sprintf("Connected to gRPC service at %s", grpcServiceURL)))
-	slog.Info("Connected to gRPC service", "url", grpcServiceURL)
+	fmt.Println(gchalk.Green(fmt.Sprintf("Connected to GAS (auth service) at %s", gasServiceURL)))
+	slog.Info("Connected to GAS (auth service)", "url", gasServiceURL)
 
 	// Start HTTP server
 	go func() {
