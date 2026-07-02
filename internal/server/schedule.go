@@ -327,6 +327,80 @@ func (s *Server) processSchedulesWithWorkerPool(ctx context.Context, queries, na
 	return schedules, nil
 }
 
+// latestSessionQuery returns the query of the newest session in the dropdown.
+// Past semesters are immutable, so only this one must be re-scraped on a cache
+// hit. queries and names are index-aligned.
+func latestSessionQuery(queries, names []string) string {
+	latest := 0
+	for i := 1; i < len(queries) && i < len(names); i++ {
+		if utils.SortSessionNames(names[i], names[latest]) {
+			latest = i
+		}
+	}
+	return queries[latest]
+}
+
+// resolveSchedules returns the schedules for the given sessions, using the GEI
+// cache to avoid re-scraping immutable past semesters. When the cache is
+// disabled (indexer nil), forced (refresh), or empty, it scrapes everything.
+// Otherwise it re-scrapes only the latest session plus any session missing from
+// the cache, and serves the rest from cache. It never writes the cache — the
+// handler persists the result only after a fully successful (non-stale) scrape.
+func (s *Server) resolveSchedules(ctx context.Context, username string, queries, names []string, cookie string, stale *atomic.Bool, refresh bool) ([]dtos.ScheduleResponse, error) {
+	if s.indexer == nil || refresh {
+		return s.processSchedulesWithWorkerPool(ctx, queries, names, cookie, stale)
+	}
+
+	cached, found, err := s.indexer.GetSchedule(ctx, username)
+	if err != nil {
+		// A cache read failure must not break the request: fall back to a scrape.
+		s.log.WarnContext(ctx, "GEI GetSchedule failed, scraping all sessions", "error", err)
+		found = false
+	}
+	if !found || len(cached) == 0 {
+		return s.processSchedulesWithWorkerPool(ctx, queries, names, cookie, stale)
+	}
+
+	cachedByQuery := make(map[string]dtos.ScheduleResponse, len(cached))
+	for _, c := range cached {
+		cachedByQuery[c.SessionQuery] = c
+	}
+
+	// Re-scrape the latest session (mutable) plus anything not yet cached.
+	latest := latestSessionQuery(queries, names)
+	var scrapeQueries, scrapeNames []string
+	for i, q := range queries {
+		if _, ok := cachedByQuery[q]; q == latest || !ok {
+			scrapeQueries = append(scrapeQueries, q)
+			scrapeNames = append(scrapeNames, names[i])
+		}
+	}
+
+	var scraped []dtos.ScheduleResponse
+	if len(scrapeQueries) > 0 {
+		scraped, err = s.processSchedulesWithWorkerPool(ctx, scrapeQueries, scrapeNames, cookie, stale)
+		if err != nil {
+			return nil, err
+		}
+	}
+	scrapedByQuery := make(map[string]dtos.ScheduleResponse, len(scraped))
+	for _, sc := range scraped {
+		scrapedByQuery[sc.SessionQuery] = sc
+	}
+
+	// Merge over the authoritative dropdown order: fresh scrape wins, else cache.
+	// Iterating over queries drops cached sessions no longer offered by i-Ma'luum.
+	merged := make([]dtos.ScheduleResponse, 0, len(queries))
+	for _, q := range queries {
+		if sc, ok := scrapedByQuery[q]; ok {
+			merged = append(merged, sc)
+		} else if c, ok := cachedByQuery[q]; ok {
+			merged = append(merged, c)
+		}
+	}
+	return merged, nil
+}
+
 // @Title ScheduleHandler
 // @Description Get schedule from i-Ma'luum
 // @Tags scraper
@@ -345,6 +419,13 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		sessionNames   []string
 		schedules      []dtos.ScheduleResponse
 	)
+
+	// username keys the GEI schedule cache; refresh forces a full re-scrape.
+	var username string
+	if sess, ok := r.Context().Value(ctxSession).(*TokenPayload); ok && sess != nil {
+		username = sess.username
+	}
+	refresh := r.URL.Query().Has("refresh")
 
 	// Return fake data for fake user
 	if cookie == constants.DebugUserCookie {
@@ -575,7 +656,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 			return false, errors.ErrScheduleIsEmpty
 		}
 
-		result, err := s.processSchedulesWithWorkerPool(r.Context(), filteredQueries, filteredNames, cookie, &stale)
+		result, err := s.resolveSchedules(r.Context(), username, filteredQueries, filteredNames, cookie, &stale, refresh)
 		if err != nil {
 			return false, err
 		}
@@ -600,6 +681,14 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(schedules, func(i, j int) bool {
 		return utils.SortSessionNames(schedules[i].SessionName, schedules[j].SessionName)
 	})
+
+	// Refresh the cache with the successful result (best-effort). Only reached on
+	// a non-stale scrape, so the login page can never poison the cache.
+	if s.indexer != nil && username != "" {
+		if err := s.indexer.StoreSchedule(r.Context(), username, schedules); err != nil {
+			logger.WarnContext(r.Context(), "Failed to cache schedule in GEI", "error", err)
+		}
+	}
 
 	response := &dtos.ResponseDTO{
 		Message: "Successfully fetched schedule",
