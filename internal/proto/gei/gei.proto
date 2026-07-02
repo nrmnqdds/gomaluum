@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+// The proto package MUST match GEI's server (package `schedule`) so the gRPC
+// method paths line up (/schedule.ScheduleIndexer/...). The Go package is set
+// separately via go_package.
+package schedule;
+
+option go_package = "github.com/nrmnqdds/gomaluum/internal/proto/gei";
+
+// ScheduleIndexer stores and retrieves a user's schedule (encrypted at rest by
+// GEI). Used as gomaluum's shared cache so scraped schedules survive across the
+// stateless serverless instances.
+service ScheduleIndexer {
+  // Store a user's schedule (will be encrypted). Guarded by an admin-key header.
+  rpc StoreSchedule(StoreScheduleRequest) returns (StoreScheduleResponse);
+
+  // Retrieve a user's schedule (will be decrypted).
+  rpc GetSchedule(GetScheduleRequest) returns (GetScheduleResponse);
+}
+
+message StoreScheduleRequest {
+  string username = 1;
+  string schedule_json = 2; // The schedule data as JSON string
+}
+
+message StoreScheduleResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetScheduleRequest {
+  string username = 1;
+}
+
+message GetScheduleResponse {
+  bool success = 1;
+  string schedule_json = 2; // The decrypted schedule data
+  string message = 3;
+}
