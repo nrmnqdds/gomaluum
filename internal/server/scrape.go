@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"net/http"
 	"sync/atomic"
 
 	"github.com/gocolly/colly/v2"
@@ -31,6 +32,19 @@ func applyImaluumHeaders(c *colly.Collector, cookie string) {
 		r.Headers.Set("User-Agent", constants.DefaultUserAgent)
 		r.Headers.Set("Accept", constants.DefaultAcceptHeader)
 	})
+}
+
+// classifyVisitError maps a colly Visit error to a CustomError. colly reports a
+// non-2xx upstream response as errors.New(http.StatusText(code)), so a 403
+// surfaces as "Forbidden". That means i-Ma'luum blocked the request (typically
+// the server's IP being banned) — an upstream failure, not our bug — so it maps
+// to ErrUpstreamForbidden (502) to stay distinguishable from a genuine 500.
+// Everything else (transport failures, other statuses) stays a generic 500.
+func classifyVisitError(err error) *errors.CustomError {
+	if err != nil && err.Error() == http.StatusText(http.StatusForbidden) {
+		return errors.Wrap(errors.ErrUpstreamForbidden, err)
+	}
+	return errors.Wrap(errors.ErrFailedToGoToURL, err)
 }
 
 // newImaluumCollector builds a colly.Collector wired for an authenticated

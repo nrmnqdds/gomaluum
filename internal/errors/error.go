@@ -69,6 +69,15 @@ var (
 		StatusCode: 500,
 	}
 
+	// ErrUpstreamForbidden is returned when i-Ma'luum answers a scrape with 403
+	// Forbidden. This is an upstream rejection (e.g. the server's IP being
+	// blocked), not a fault in our service, so it maps to 502 Bad Gateway to keep
+	// it distinguishable from genuine 500 internal errors in logs and dashboards.
+	ErrUpstreamForbidden = &CustomError{
+		Message:    "i-Ma'luum rejected the request (upstream returned 403 Forbidden)",
+		StatusCode: 502,
+	}
+
 	ErrFailedToEncodeResponse = &CustomError{
 		Message:    "Failed to encode response",
 		StatusCode: 500,

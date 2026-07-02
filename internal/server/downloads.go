@@ -47,8 +47,8 @@ func (s *Server) ExamSlipHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close() // Use defer to close the body after we're done with it
 
-	if !checkDownloadResponse(r.Context(), logger, resp) {
-		errors.Render(w, r, errors.ErrDownloadFailed)
+	if err := checkDownloadResponse(r.Context(), logger, resp); err != nil {
+		errors.Render(w, r, err)
 		return
 	}
 
@@ -94,8 +94,8 @@ func (s *Server) StudyPlanHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close() // Use defer to close the body after we're done with it
 
-	if !checkDownloadResponse(r.Context(), logger, resp) {
-		errors.Render(w, r, errors.ErrDownloadFailed)
+	if err := checkDownloadResponse(r.Context(), logger, resp); err != nil {
+		errors.Render(w, r, err)
 		return
 	}
 
@@ -107,20 +107,29 @@ func (s *Server) StudyPlanHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// checkDownloadResponse reports whether the upstream response is OK to stream.
-// i-Ma'luum's /MyAcademic/* download paths can return a 403 block page; without
-// this check that HTML body would be streamed to the client masquerading as a
-// PDF. On a non-2xx it logs the block-page details (status, headers, snippet) so
-// a recurring 403 can be diagnosed from production logs.
-func checkDownloadResponse(ctx context.Context, logger *slog.Logger, resp *http.Response) bool {
+// checkDownloadResponse returns nil when the upstream response is OK to stream,
+// or the CustomError to surface otherwise. i-Ma'luum's /MyAcademic/* download
+// paths can return a 403 block page; without this check that HTML body would be
+// streamed to the client masquerading as a PDF. A 403 is an upstream block (e.g.
+// the server IP being banned), so it maps to ErrUpstreamForbidden (502) to stay
+// distinguishable from a genuine failure; other non-2xx stay ErrDownloadFailed
+// (500). Either way the block-page detail (status, headers, snippet) is logged
+// and recorded on the request span so a recurring 403 can be diagnosed.
+func checkDownloadResponse(ctx context.Context, logger *slog.Logger, resp *http.Response) *errors.CustomError {
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		return true
+		return nil
 	}
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 	url := ""
 	if resp.Request != nil && resp.Request.URL != nil {
 		url = resp.Request.URL.String()
 	}
+
+	outErr := errors.ErrDownloadFailed
+	if resp.StatusCode == http.StatusForbidden {
+		outErr = errors.ErrUpstreamForbidden
+	}
+
 	logger.ErrorContext(ctx, "i-Ma'luum download upstream error",
 		"status", resp.StatusCode,
 		"url", url,
@@ -131,7 +140,7 @@ func checkDownloadResponse(ctx context.Context, logger *slog.Logger, resp *http.
 	)
 
 	span := trace.SpanFromContext(ctx)
-	span.RecordError(errors.ErrDownloadFailed, trace.WithAttributes(
+	span.RecordError(outErr, trace.WithAttributes(
 		attribute.Int("imaluum.status", resp.StatusCode),
 		attribute.String("imaluum.url", url),
 		attribute.String("imaluum.server", resp.Header.Get("Server")),
@@ -140,7 +149,7 @@ func checkDownloadResponse(ctx context.Context, logger *slog.Logger, resp *http.
 		attribute.String("imaluum.body_snippet", string(body)),
 	))
 	span.SetStatus(codes.Error, "i-Ma'luum download upstream error")
-	return false
+	return outErr
 }
 
 // Function to set headers for a request.
