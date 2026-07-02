@@ -160,7 +160,7 @@ func (s *Server) Profile(ctx context.Context, cookie string) (*dtos.Profile, boo
 	}
 
 	var stale atomic.Bool
-	c := s.newImaluumCollector(cookie, &stale)
+	c := s.newImaluumCollector(ctx, cookie, &stale)
 
 	var profileResult *dtos.Profile
 

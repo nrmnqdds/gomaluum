@@ -7,6 +7,9 @@ import (
 	"github.com/gocolly/colly/v2"
 	"github.com/nrmnqdds/gomaluum/internal/constants"
 	"github.com/nrmnqdds/gomaluum/internal/errors"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // detectStale flags the scrape as stale if the fetched page contains a CAS
@@ -32,13 +35,62 @@ func applyImaluumHeaders(c *colly.Collector, cookie string) {
 
 // newImaluumCollector builds a colly.Collector wired for an authenticated
 // i-Ma'luum scrape: the shared HTTP transport, stale-session detection, and the
-// required request headers. Callers add their own OnHTML handlers and Visit.
-func (s *Server) newImaluumCollector(cookie string, stale *atomic.Bool) *colly.Collector {
+// required request headers. ctx carries the request's trace span so upstream
+// errors are correlated. Callers add their own OnHTML handlers and Visit.
+func (s *Server) newImaluumCollector(ctx context.Context, cookie string, stale *atomic.Bool) *colly.Collector {
 	c := colly.NewCollector()
 	c.WithTransport(s.httpClient.Transport)
 	detectStale(c, stale)
 	applyImaluumHeaders(c, cookie)
+	s.logUpstreamError(ctx, c)
 	return c
+}
+
+// logUpstreamError records the details of any non-2xx i-Ma'luum response so a
+// recurring 403 can be diagnosed from production logs. colly does not run OnHTML
+// for error responses, so the block page (Cloudflare challenge, WAF/IP-ban page,
+// Laravel error, etc.) is otherwise thrown away and every failure looks like a
+// generic "Forbidden". The detail is emitted both as a trace-correlated log
+// record (via the otelslog bridge) and as an event on the request's span, so it
+// surfaces in SigNoz on the offending trace. Body is truncated to keep the
+// signal bounded.
+func (s *Server) logUpstreamError(ctx context.Context, c *colly.Collector) {
+	c.OnError(func(r *colly.Response, err error) {
+		url := ""
+		if r.Request != nil && r.Request.URL != nil {
+			url = r.Request.URL.String()
+		}
+		body := string(r.Body)
+		if len(body) > 512 {
+			body = body[:512]
+		}
+		var server, cfRay, contentType string
+		if r.Headers != nil {
+			server = r.Headers.Get("Server")
+			cfRay = r.Headers.Get("CF-Ray")
+			contentType = r.Headers.Get("Content-Type")
+		}
+		s.log.ErrorContext(ctx, "i-Ma'luum upstream error",
+			"status", r.StatusCode,
+			"url", url,
+			"server", server,
+			"cf_ray", cfRay,
+			"content_type", contentType,
+			"body_snippet", body,
+			"error", err,
+		)
+
+		span := trace.SpanFromContext(ctx)
+		span.RecordError(err, trace.WithAttributes(
+			attribute.Int("imaluum.status", r.StatusCode),
+			attribute.String("imaluum.url", url),
+			attribute.String("imaluum.server", server),
+			attribute.String("imaluum.cf_ray", cfRay),
+			attribute.String("imaluum.content_type", contentType),
+			attribute.String("imaluum.body_snippet", body),
+		))
+		span.SetStatus(codes.Error, "i-Ma'luum upstream error")
+	})
 }
 
 // runWithRetry runs fn with cookie. If fn reports a stale session, it calls
