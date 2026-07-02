@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"slices"
@@ -100,12 +101,12 @@ func parseResultRow(tds []string, subjects *[]dtos.Result, gpaInfo *map[string]s
 }
 
 // Worker function for processing result sessions
-func (s *Server) resultWorker(jobs <-chan resultJob, results chan<- resultWorkerResult, cookie string, stale *atomic.Bool) {
+func (s *Server) resultWorker(ctx context.Context, jobs <-chan resultJob, results chan<- resultWorkerResult, cookie string, stale *atomic.Bool) {
 	for job := range jobs {
 		func() {
 			defer utils.CatchPanic("result worker")
 
-			c := s.newImaluumCollector(cookie, stale)
+			c := s.newImaluumCollector(ctx, cookie, stale)
 
 			var (
 				mu       sync.Mutex
@@ -163,7 +164,7 @@ func (s *Server) resultWorker(jobs <-chan resultJob, results chan<- resultWorker
 }
 
 // Process results using worker pool pattern
-func (s *Server) processResultsWithWorkerPool(queries, names []string, cookie string, stale *atomic.Bool) ([]dtos.ResultResponse, error) {
+func (s *Server) processResultsWithWorkerPool(ctx context.Context, queries, names []string, cookie string, stale *atomic.Bool) ([]dtos.ResultResponse, error) {
 	const maxWorkers = 5
 
 	jobs := make(chan resultJob, len(queries))
@@ -171,7 +172,7 @@ func (s *Server) processResultsWithWorkerPool(queries, names []string, cookie st
 
 	// Start workers
 	for range maxWorkers {
-		go s.resultWorker(jobs, results, cookie, stale)
+		go s.resultWorker(ctx, jobs, results, cookie, stale)
 	}
 
 	// Send jobs
@@ -331,7 +332,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 		sessionQueries = sessionQueries[:0]
 		sessionNames = sessionNames[:0]
 
-		c := s.newImaluumCollector(cookie, &stale)
+		c := s.newImaluumCollector(r.Context(), cookie, &stale)
 		c.OnHTML(".box.box-primary .box-header.with-border .dropdown ul.dropdown-menu", func(e *colly.HTMLElement) {
 			sessionQueries = e.ChildAttrs("li[style*='font-size:16px'] a", "href")
 			sessionNames = e.ChildTexts("li[style*='font-size:16px'] a")
@@ -356,7 +357,7 @@ func (s *Server) ResultHandler(w http.ResponseWriter, r *http.Request) {
 			return false, errors.ErrResultIsEmpty
 		}
 
-		result, err := s.processResultsWithWorkerPool(filteredQueries, filteredNames, cookie, &stale)
+		result, err := s.processResultsWithWorkerPool(r.Context(), filteredQueries, filteredNames, cookie, &stale)
 		if err != nil {
 			return false, err
 		}

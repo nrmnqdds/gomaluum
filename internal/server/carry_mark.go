@@ -67,7 +67,7 @@ func (s *Server) CarryMarkHandler(w http.ResponseWriter, r *http.Request) {
 		mu.Unlock()
 
 		var stale atomic.Bool
-		c := s.newImaluumCollector(cookie, &stale)
+		c := s.newImaluumCollector(r.Context(), cookie, &stale)
 
 		c.OnHTML("script", func(e *colly.HTMLElement) {
 			content := strings.TrimSpace(e.Text)

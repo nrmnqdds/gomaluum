@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -232,12 +233,12 @@ func parseTableRow(tds []string, subjects *[]dtos.ScheduleSubject, mu *sync.Mute
 }
 
 // Worker function for processing schedule sessions
-func (s *Server) scheduleWorker(jobs <-chan scheduleJob, results chan<- scheduleResult, cookie string, stale *atomic.Bool) {
+func (s *Server) scheduleWorker(ctx context.Context, jobs <-chan scheduleJob, results chan<- scheduleResult, cookie string, stale *atomic.Bool) {
 	for job := range jobs {
 		func() {
 			defer utils.CatchPanic("schedule worker")
 
-			c := s.newImaluumCollector(cookie, stale)
+			c := s.newImaluumCollector(ctx, cookie, stale)
 
 			mu := sync.Mutex{}
 			subjects := []dtos.ScheduleSubject{}
@@ -284,7 +285,7 @@ func (s *Server) scheduleWorker(jobs <-chan scheduleJob, results chan<- schedule
 }
 
 // Process schedules using worker pool pattern
-func (s *Server) processSchedulesWithWorkerPool(queries, names []string, cookie string, stale *atomic.Bool) ([]dtos.ScheduleResponse, error) {
+func (s *Server) processSchedulesWithWorkerPool(ctx context.Context, queries, names []string, cookie string, stale *atomic.Bool) ([]dtos.ScheduleResponse, error) {
 	const maxWorkers = 5
 
 	jobs := make(chan scheduleJob, len(queries))
@@ -292,7 +293,7 @@ func (s *Server) processSchedulesWithWorkerPool(queries, names []string, cookie 
 
 	// Start workers
 	for range maxWorkers {
-		go s.scheduleWorker(jobs, results, cookie, stale)
+		go s.scheduleWorker(ctx, jobs, results, cookie, stale)
 	}
 
 	// Send jobs
@@ -549,7 +550,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		sessionQueries = sessionQueries[:0]
 		sessionNames = sessionNames[:0]
 
-		c := s.newImaluumCollector(cookie, &stale)
+		c := s.newImaluumCollector(r.Context(), cookie, &stale)
 		c.OnHTML(".box.box-primary .box-header.with-border .dropdown ul.dropdown-menu", func(e *colly.HTMLElement) {
 			sessionQueries = e.ChildAttrs("li[style*='font-size:16px'] a", "href")
 			sessionNames = e.ChildTexts("li[style*='font-size:16px'] a")
@@ -574,7 +575,7 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 			return false, errors.ErrScheduleIsEmpty
 		}
 
-		result, err := s.processSchedulesWithWorkerPool(filteredQueries, filteredNames, cookie, &stale)
+		result, err := s.processSchedulesWithWorkerPool(r.Context(), filteredQueries, filteredNames, cookie, &stale)
 		if err != nil {
 			return false, err
 		}
