@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"net/http"
+	"strings"
 	"sync/atomic"
 
 	"github.com/gocolly/colly/v2"
@@ -12,6 +13,13 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
+
+// isTruthyParam reports whether a query-param value means "on" (e.g. ?refresh=1
+// or ?refresh=true). Everything else — "0", "false", or absent — is false, so
+// callers default to the cached path.
+func isTruthyParam(v string) bool {
+	return v == "1" || strings.EqualFold(v, "true")
+}
 
 // detectStale flags the scrape as stale if the fetched page contains a CAS
 // login password field. Authenticated i-Ma'luum data pages never do, so its

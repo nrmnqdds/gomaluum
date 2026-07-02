@@ -81,6 +81,24 @@ func TestScrapeWithRetry_MissingSession(t *testing.T) {
 	require.False(t, called)
 }
 
+func TestIsTruthyParam(t *testing.T) {
+	for _, tc := range []struct {
+		in   string
+		want bool
+	}{
+		{"1", true},
+		{"true", true},
+		{"TRUE", true},
+		{"True", true},
+		{"0", false},
+		{"false", false},
+		{"", false},
+		{"yes", false},
+	} {
+		require.Equal(t, tc.want, isTruthyParam(tc.in), "input %q", tc.in)
+	}
+}
+
 func TestClassifyVisitError(t *testing.T) {
 	t.Run("403 Forbidden: maps to upstream forbidden (502)", func(t *testing.T) {
 		// colly reports a non-2xx as errors.New(http.StatusText(code)).

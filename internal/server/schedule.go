@@ -420,12 +420,14 @@ func (s *Server) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		schedules      []dtos.ScheduleResponse
 	)
 
-	// username keys the GEI schedule cache; refresh forces a full re-scrape.
+	// username keys the GEI schedule cache; ?refresh=1 (or ?refresh=true) forces
+	// a full re-scrape that bypasses the cache read. Any other value is ignored,
+	// so ?refresh=0 keeps using the cache.
 	var username string
 	if sess, ok := r.Context().Value(ctxSession).(*TokenPayload); ok && sess != nil {
 		username = sess.username
 	}
-	refresh := r.URL.Query().Has("refresh")
+	refresh := isTruthyParam(r.URL.Query().Get("refresh"))
 
 	// Return fake data for fake user
 	if cookie == constants.DebugUserCookie {
